@@ -106,7 +106,7 @@ try {
 <div class="topline"><div class="wrap"><span>PEMERINTAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA</span><span>KECAMATAN PANCORAN · JAKARTA SELATAN</span></div></div>
 <header class="nav"><div class="wrap nav-inner">
 <a class="brand" href="/"><span class="monogram">KC</span><span><strong>KELURAHAN CIKOKO</strong><small>Portal Pelayanan dan Administrasi Terpadu</small></span></a>
-<nav class="navlinks" aria-label="Navigasi utama"><a href="/">Beranda</a><a href="/?page=dashboard">Ruang Kerja</a><a href="/super-admin.php">Pusat Super Admin</a><a class="selected" href="/direktori-akun.php">Direktori Akun</a></nav>
+<nav class="navlinks" aria-label="Navigasi utama"><a href="/">Beranda</a><a href="/?page=dashboard">Ruang Kerja</a><a href="/super-admin.php">Pusat Super Admin</a><a class="selected" href="/direktori-akun.php">Direktori Akun</a><a href="/kelola-pengguna.php">Manajemen Pengguna</a></nav>
 </div></header>
 <main>
 <section class="hero"><div class="wrap hero-inner"><div>
