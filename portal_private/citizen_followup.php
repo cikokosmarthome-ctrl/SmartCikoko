@@ -101,6 +101,11 @@ function t10_upload(array $actor,int $requestId,string $type,array $upload):void
     $original=basename(str_replace('\\','/',$original));
     $original=mb_substr(preg_replace('/[^\pL\pN ._-]/u','_', $original)??'berkas',0,120);
     if(trim($original)==='')$original='berkas.'.$types[$mime];
+    $t13File=__DIR__.'/security_stage13.php';
+    if(is_file($t13File)){
+        require_once $t13File;
+        s13_scan_upload_if_configured($tmp);
+    }
     $stored=bin2hex(random_bytes(24)).'.'.$types[$mime];
     $destination=t10_storage().'/'.$stored;
     // Save a new object; no overwrite, filename never based on user input.
