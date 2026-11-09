@@ -22,7 +22,7 @@ try {
         $identity=trim((string)($body['username']??''));$password=(string)($body['password']??'');
         throttle_login($identity);
         $matches=login_matches($identity,$password);
-        if(!$matches) respond(['ok'=>false,'error'=>'Identitas akun atau kata sandi tidak sesuai.'],401);
+        if(!$matches){log_event('login_failed','identity',$identity);respond(['ok'=>false,'error'=>'Identitas akun atau kata sandi tidak sesuai.'],401);}
         $source=(string)($body['source']??'');$id=(string)($body['id']??'');
         if($source!==''&&$id!=='')$matches=array_values(array_filter($matches,fn($u)=>$u['source']===$source&&(string)$u['id']===$id));
         if(!$matches)respond(['ok'=>false,'error'=>'Pilihan identitas tidak sesuai.'],401);
@@ -30,8 +30,35 @@ try {
           'id'=>$u['id'],'source'=>$u['source'],'name'=>$u['name'],'role_label'=>role_label($u['role'])
         ],$matches)]);
         clear_login_limit($identity);
-        $u=$matches[0];$token=issue_api_token($u);
-        respond(['ok'=>true,'token'=>$token,'expires_in'=>2592000,'user'=>array_diff_key($u,['username'=>true])]);
+        $u=$matches[0];
+        $mfaAttested=false;
+        $security=dirname(__DIR__,2).'/portal_private/security_stage13.php';
+        if(is_file($security)&&is_super_admin_identity($u)){
+            require_once $security;
+            if(is_file(dirname(__DIR__,2).'/portal_private/mfa_key.php')&&!s13_installed())
+                respond(['ok'=>false,'error'=>'Layanan autentikasi tambahan belum tersedia.'],503);
+            if(s13_installed() && s13_enrolled($u)){
+                if(!isset($body['otp']) || trim((string)$body['otp'])==='')
+                    respond(['ok'=>false,'mfa_required'=>true,'error'=>'Kode autentikator diperlukan.'],401);
+                throttle_login($identity.'|api-mfa');
+                if(!s13_mfa_verified($u,trim((string)$body['otp']))){
+                    log_event('mfa_api_failed','security','login');
+                    respond(['ok'=>false,'mfa_required'=>true,'error'=>'Kode MFA tidak sesuai.'],401);
+                }
+                clear_login_limit($identity.'|api-mfa');
+                $mfaAttested=true;
+            }
+        }
+        $token=issue_api_token($u);
+        if($mfaAttested){
+            try{s13_store_api_attestation($u,$token);}
+            catch(Throwable $e){
+                db('smartapp')->prepare('DELETE FROM unified_api_tokens WHERE token_hash=?')->execute([hash('sha256',$token)]);
+                error_log('Stage 13 API MFA attestation failed.');
+                respond(['ok'=>false,'error'=>'Penerbitan token aman gagal.'],503);
+            }
+        }
+        respond(['ok'=>true,'token'=>$token,'expires_in'=>$mfaAttested?43200:2592000,'user'=>array_diff_key($u,['username'=>true])]);
     }
     $u=api_actor();
     if(!$u)respond(['ok'=>false,'error'=>'Sesi tidak valid atau telah berakhir.'],401);
