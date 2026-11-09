@@ -23,6 +23,8 @@ h1,h2,h3,.service strong,.brand strong{font-family:system-ui,-apple-system,"Sego
 .header .brand strong{display:block;white-space:normal;font-weight:850;color:#0d3557;font-size:15px;letter-spacing:.7px;line-height:1.25}
 .header .brand small{display:block;margin-top:4px;font-size:10px;color:#748fa5;line-height:1.4}
 .header .seal{flex:0 0 45px;width:45px;height:49px;border-radius:6px 6px 17px 17px;border:2px solid #e4ad51;background:#103d62;box-shadow:0 4px 15px #0f3c6115;color:#ffd18c;font-weight:850}
+/* Preserve the existing HTML; correct the visible crest initials through CSS only. */
+.header .seal{font-size:0}.header .seal:after{content:"KC";font-size:15px;font-weight:850;color:#ffd18c}
 .header nav{display:flex;align-items:center;justify-content:flex-end;gap:4px;flex:1 1 590px;flex-wrap:wrap;margin:0}
 .header nav a{display:inline-flex;align-items:center;justify-content:center;min-height:37px;padding:9px 11px;font-size:12px;line-height:1.2;color:#335a78;font-weight:750;white-space:nowrap;border-radius:8px}
 .header nav a:hover,.header nav a.active{background:#e9f3fb;color:#104c79}
