@@ -69,5 +69,15 @@ function api_actor(): ?array {
     else { $q=db()->prepare('SELECT id,username,name,role FROM unified_portal_users WHERE id=? AND active=1'); }
     $q->execute([$token['actor_id']]);$u=$q->fetch();
     if (!$u) return null;
-    return ['source'=>$token['actor_source'],'id'=>(string)$u['id'],'username'=>$u['username'],'name'=>$u['name'],'role'=>$u['role']];
+    $result=['source'=>$token['actor_source'],'id'=>(string)$u['id'],'username'=>$u['username'],'name'=>$u['name'],'role'=>$u['role']];
+    // Tokens created before MFA enrolment cannot bypass the second factor.
+    $security=__DIR__.'/security_stage13.php';
+    if(is_file($security) && in_array($result['source'],['pegawai','smartapp'],true)
+       && in_array($result['role'],['admin','superadmin','admin_kelurahan'],true)){
+        require_once $security;
+        if(is_file(__DIR__.'/mfa_key.php') && !s13_installed())return null;
+        if(s13_installed() && s13_enrolled($result)
+           && !s13_api_attested($result,strtolower($m[1])))return null;
+    }
+    return $result;
 }
