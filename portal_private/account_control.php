@@ -21,6 +21,20 @@ function account_control_allowed(array $user): bool {
     try {
         $source=control_source($user);
         $id=control_id($user);
+        // Revalidate native account status and role; revoke stale web sessions.
+        if($source==='pegawai'){
+            $check=db('pegawai')->prepare('SELECT role,status FROM users WHERE id=? LIMIT 1');
+            $check->execute([$id]);$native=$check->fetch(PDO::FETCH_ASSOC);
+            if(!$native || $native['status']!=='active' || $native['role']!==(string)($user['role']??''))return false;
+        }elseif($source==='pancoran'){
+            $check=db('pegawai')->prepare('SELECT is_active FROM ck_pancoran_users WHERE id=? LIMIT 1');
+            $check->execute([$id]);$native=$check->fetch(PDO::FETCH_ASSOC);
+            if(!$native || (int)$native['is_active']!==1 || (string)($user['role']??'')!=='pppk_pancoran')return false;
+        }else{
+            $check=db('smartapp')->prepare('SELECT role,active FROM unified_portal_users WHERE id=? LIMIT 1');
+            $check->execute([$id]);$native=$check->fetch(PDO::FETCH_ASSOC);
+            if(!$native || (int)$native['active']!==1 || $native['role']!==(string)($user['role']??''))return false;
+        }
         $q=db('smartapp')->prepare('SELECT login_allowed FROM unified_account_access WHERE actor_source=? AND actor_id=? LIMIT 1');
         $q->execute([$source,$id]);
         $row=$q->fetch(PDO::FETCH_ASSOC);
