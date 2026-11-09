@@ -15,13 +15,13 @@
 
 **Prasyarat:** Tahap 6–11 dipasang dan diuji sesuai panduan sebelumnya.
 
-1. **Backup** database SmartApp dan file `public_html/super-admin.php`. Simpan backup dalam media privat.
+1. **Backup** database SmartApp terlebih dahulu. Paket Tahap 12 hanya menambahkan file baru dan **tidak menimpa dashboard Super Admin yang sedang aktif**.
 2. Unduh file `paket/SmartCikoko-TAHAP12-KESIAPAN.zip` dari repository GitHub SmartCikoko.
 3. Buka **cPanel → File Manager → /home/datd1747/**, upload ZIP kemudian **Extract di direktori tersebut**, bukan di dalam `public_html`.
 4. Login menggunakan akun Super Admin.
 5. Buka **https://datawebs.my.id/instal-kesiapan.php** kemudian klik **Pasang Tahap 12**.
 6. Setelah berhasil, buka **https://datawebs.my.id/kesiapan-produksi.php**.
-7. Periksa 11 indikator otomatis dan isi checklist manual **hanya untuk pekerjaan yang memang sudah diselesaikan**.
+7. Periksa 11 indikator otomatis dan isi checklist manual **hanya untuk pekerjaan yang memang sudah diselesaikan**. Halaman bisa langsung dibuka lewat URL di langkah 6 meskipun menu dashboard lama belum memiliki tautan Tahap 12.
 8. Setelah pemasangan dan pengujian, **hapus public_html/instal-kesiapan.php serta ZIP dari hosting**, lalu muat ulang dashboard agar pemeriksaan pembersihan installer menjadi hijau.
 
 **Tidak perlu membuka phpMyAdmin atau menjalankan SQL manual.** Installer hanya menambahkan dua tabel:
@@ -60,10 +60,11 @@ File lain, database Pegawai, akun lama, berkas lampiran, alur Tahap 9, dan penga
 └── public_html/
     ├── kesiapan-produksi.php       (baru)
     ├── instal-kesiapan.php         (hapus setelah pemasangan)
-    ├── super-admin.php            (tautan pusat kesiapan)
     └── assets/
         ├── kesiapan-produksi.css
         └── instal-kesiapan.css
 ```
 
 **Status:** pembuatan ZIP dan lint PHP dilakukan di GitHub Actions; instalasi pada Rumahweb harus dilakukan oleh pemilik hosting. Tahap ini sengaja belum membuka fitur surat dinas resmi atau perizinan digital yang memerlukan kebijakan dan otorisasi instansi.
+
+> **Paket aman bagi dashboard aktif:** tautan `kesiapan-produksi.php` sudah ditambahkan pada `super-admin.php` di repository GitHub, tetapi file dashboard tersebut sengaja **tidak dimasukkan ke ZIP Tahap 12** agar tidak mengganti versi live yang mungkin telah disesuaikan. Gunakan URL langsung untuk membuka panel baru.
