@@ -1,0 +1,87 @@
+name: Paket Tahap 8 Verifikasi dan Laporan
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/document_workflow.php'
+      - 'public_html/verifikasi-layanan.php'
+      - 'public_html/unduh-berkas.php'
+      - 'public_html/instal-layanan.php'
+      - 'public_html/assets/verifikasi-layanan.css'
+      - 'public_html/assets/instal-layanan.css'
+      - 'public_html/super-admin.php'
+      - 'public_html/operasional.php'
+      - 'tests/stage8-unit.php'
+      - '.github/workflows/pack-stage8.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage8-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_mysql, fileinfo
+          tools: none
+      - name: Periksa sintaks PHP
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
+            portal_private/document_workflow.php \
+            public_html/verifikasi-layanan.php \
+            public_html/unduh-berkas.php \
+            public_html/instal-layanan.php \
+            public_html/super-admin.php \
+            public_html/operasional.php; do
+            php -l "$file"
+          done
+      - name: Uji fungsi validasi dasar
+        run: php tests/stage8-unit.php
+      - name: Bentuk paket cPanel tanpa rahasia dan SQL dump
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staging/portal_private staging/public_html/assets paket
+          cp portal_private/document_workflow.php staging/portal_private/
+          cp public_html/verifikasi-layanan.php public_html/unduh-berkas.php public_html/instal-layanan.php staging/public_html/
+          cp public_html/super-admin.php public_html/operasional.php staging/public_html/
+          cp public_html/assets/verifikasi-layanan.css public_html/assets/instal-layanan.css staging/public_html/assets/
+          cat > staging/BACA-TAHAP8.txt <<'HELP'
+          SMARTCIKOKO TAHAP 8 - VERIFIKASI DAN LAPORAN
+          1. Backup database SmartApp, super-admin.php, dan operasional.php.
+          2. Upload ZIP ke /home/datd1747/ dalam cPanel File Manager dan Extract.
+          3. Login memakai akun Super Admin.
+          4. Buka https://datawebs.my.id/instal-layanan.php
+          5. Klik Pasang Tahap 8.
+          6. Uji di https://datawebs.my.id/verifikasi-layanan.php
+          7. Hapus public_html/instal-layanan.php dan ZIP setelah berhasil.
+          Berkas pelayanan disimpan secara privat di portal_private/private_documents.
+          Jangan uji unggah memakai data warga asli sebelum penilaian keamanan.
+          Tidak perlu impor ulang SQL atau mengedit database lama.
+          HELP
+          (cd staging && zip -q -X -r ../paket/SmartCikoko-TAHAP8-PELAYANAN.zip .)
+          unzip -t paket/SmartCikoko-TAHAP8-PELAYANAN.zip
+      - name: Publikasikan ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP8-PELAYANAN.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 8 cPanel ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP8-PELAYANAN
+          path: paket/SmartCikoko-TAHAP8-PELAYANAN.zip
+          retention-days: 30
