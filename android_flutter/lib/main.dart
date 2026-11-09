@@ -65,6 +65,7 @@ class _PortalState extends State<Portal>{
  }
  List<Module> modules(){
    final modules=<Module>[];
+   if(permissions['super_admin']==true)modules.add(const Module('Pusat Super Admin','superadmin_dashboard',Icons.admin_panel_settings_outlined));
    if(permissions['admin']==true)modules.add(const Module('Data Pegawai','pegawai',Icons.badge_outlined));
    if(permissions['pppk']==true)modules.add(const Module('Laporan PPPK','pppk',Icons.assignment_outlined));
    if(permissions['pjlp']==true)modules.add(const Module('Kegiatan PJLP','pjlp',Icons.groups_outlined));
@@ -82,8 +83,10 @@ class _PortalState extends State<Portal>{
          subtitle:Text((user['role']??'').toString().toUpperCase())),
        for(final m in modules())ListTile(leading:Icon(m.icon),title:Text(m.title),onTap:(){
          Navigator.pop(context);
-         Navigator.push(context,MaterialPageRoute(builder:(_)=>Records(
-           resource:m.resource,token:token!,title:m.title)));
+         Navigator.push(context,MaterialPageRoute(builder:(_)=>
+           m.resource=='superadmin_dashboard'
+             ? SuperAdminPanel(token:token!)
+             : Records(resource:m.resource,token:token!,title:m.title)));
        }),
        const Divider(),
        ListTile(leading:const Icon(Icons.logout),title:const Text('Keluar'),onTap:logout)
@@ -113,7 +116,9 @@ class _PortalState extends State<Portal>{
        for(final m in modules())Card(child:ListTile(leading:Icon(m.icon),title:Text(m.title),
          trailing:const Icon(Icons.arrow_forward_ios,size:15),
          onTap:()=>Navigator.push(context,MaterialPageRoute(
-          builder:(_)=>Records(resource:m.resource,token:token!,title:m.title))))),
+          builder:(_)=>m.resource=='superadmin_dashboard'
+              ? SuperAdminPanel(token:token!)
+              : Records(resource:m.resource,token:token!,title:m.title))))),
        const SizedBox(height:20),const PublicNews()
      ])
    );
@@ -190,6 +195,79 @@ class _LoginState extends State<Login>{
      const SizedBox(height:20),const PublicNews(),
    ]));
 }
+
+class SuperAdminPanel extends StatelessWidget {
+  final String token;
+  const SuperAdminPanel({super.key,required this.token});
+  @override Widget build(BuildContext context)=>Scaffold(
+    appBar:AppBar(title:const Text('Pusat Super Admin')),
+    body:FutureBuilder<Map<String,dynamic>>(
+      future:PortalApi.call('superadmin_dashboard',token:token),
+      builder:(context,snap) {
+        if(snap.hasError) {
+          return Center(child:Padding(padding:const EdgeInsets.all(20),
+            child:Text('Pusat kendali belum tersedia: '+snap.error.toString())));
+        }
+        if(!snap.hasData)return const Center(child:CircularProgressIndicator());
+        final data=Map<String,dynamic>.from(snap.data?['data']??{});
+        final health=Map<String,dynamic>.from(data['health']??{});
+        final connections=Map<String,dynamic>.from(health['connections']??{});
+        final metrics=health['metrics'] as List? ?? [];
+        final modules=data['modules'] as List? ?? [];
+        return ListView(padding:const EdgeInsets.all(18),children:[
+          Card(color:const Color(0xFF143F65),child:Padding(
+            padding:const EdgeInsets.all(22),child:Column(
+              crossAxisAlignment:CrossAxisAlignment.start,children:[
+                const Icon(Icons.admin_panel_settings,color:Colors.white,size:36),
+                const SizedBox(height:12),
+                const Text('Pusat Kendali Terpadu',
+                  style:TextStyle(color:Colors.white,fontSize:24,fontWeight:FontWeight.w800)),
+                const SizedBox(height:6),
+                const Text('Pengawasan dua database dan progres setiap modul.',
+                  style:TextStyle(color:Color(0xFFD7E7F1))),
+              ]))),
+          const SizedBox(height:15),
+          const Text('Status Integrasi',style:TextStyle(fontSize:19,fontWeight:FontWeight.w800)),
+          for(final e in connections.entries) Card(child:ListTile(
+            leading:Icon(e.value==true?Icons.check_circle:Icons.error_outline,
+              color:e.value==true?Colors.green:Colors.red),
+            title:Text(e.key=='pegawai'?'Database Pegawai':'Database SmartApp'),
+            subtitle:Text(e.value==true?'Terhubung':'Gangguan koneksi'))),
+          const SizedBox(height:15),
+          const Text('Rekap Operasional',style:TextStyle(fontSize:19,fontWeight:FontWeight.w800)),
+          for(final m in metrics) Card(child:ListTile(
+            title:Text((m['title']??'').toString()),
+            trailing:Text((m['value']??'—').toString(),
+              style:const TextStyle(fontSize:21,fontWeight:FontWeight.bold)))),
+          const SizedBox(height:15),
+          const Text('Progres Pekerjaan',style:TextStyle(fontSize:19,fontWeight:FontWeight.w800)),
+          const Padding(padding:EdgeInsets.symmetric(vertical:8),
+            child:Text('Progres dilaporkan oleh Super Admin melalui website.')),
+          if(data['progress_configured']!=true)
+            const Card(child:ListTile(title:Text('Migrasi tabel progres belum lengkap'),
+              subtitle:Text('Periksa instalasi schema Super Admin di phpMyAdmin.'))),
+          for(final m in modules)
+            Card(child:Padding(padding:const EdgeInsets.all(16),
+              child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                Text((m['label']??'').toString(),
+                  style:const TextStyle(fontWeight:FontWeight.w800,fontSize:15)),
+                const SizedBox(height:5),
+                Text((m['status']??'belum').toString().toUpperCase()+
+                  ' • '+(m['progress_percent']??0).toString()+'%'),
+                const SizedBox(height:10),
+                LinearProgressIndicator(value:((m['progress_percent']??0) as num)
+                  .toDouble().clamp(0,100)/100),
+                if((m['notes']??'').toString().isNotEmpty)
+                  Padding(padding:const EdgeInsets.only(top:10),
+                    child:Text(m['notes'].toString())),
+              ]))),
+          const SizedBox(height:20),
+        ]);
+      },
+    ),
+  );
+}
+
 class Records extends StatelessWidget{
  final String resource,token,title;
  const Records({super.key,required this.resource,required this.token,required this.title});
