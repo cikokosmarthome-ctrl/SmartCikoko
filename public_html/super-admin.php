@@ -55,7 +55,7 @@ function status_label(string $s):string{return match($s) {
 <div class="topline"><div class="wrap"><span>PEMERINTAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA</span><span>KECAMATAN PANCORAN · JAKARTA SELATAN</span></div></div>
 <header class="nav"><div class="wrap nav-inner">
   <a class="brand" href="/"><span class="monogram">KC</span><span><strong>KELURAHAN CIKOKO</strong><small>Portal Pelayanan dan Administrasi Terpadu</small></span></a>
-  <div class="navlinks"><a href="/">Beranda</a><a href="/?page=dashboard">Ruang Kerja</a><a class="selected" href="/super-admin.php">Pusat Super Admin</a><a href="/direktori-akun.php">Direktori Akun</a><a href="/kelola-pengguna.php">Manajemen Pengguna</a><a href="/operasional.php">Pusat Operasional</a><a href="/verifikasi-layanan.php">Verifikasi & Laporan</a><a href="/?page=profil">Profil</a></div>
+  <div class="navlinks"><a href="/">Beranda</a><a href="/?page=dashboard">Ruang Kerja</a><a class="selected" href="/super-admin.php">Pusat Super Admin</a><a href="/direktori-akun.php">Direktori Akun</a><a href="/kelola-pengguna.php">Manajemen Pengguna</a><a href="/operasional.php">Pusat Operasional</a><a href="/verifikasi-layanan.php">Verifikasi & Laporan</a><a href="/pengajuan-warga.php">Pengajuan Masyarakat</a><a href="/?page=profil">Profil</a></div>
 </div></header>
 <main>
 <section class="hero"><div class="wrap hero-inner"><div>
@@ -120,6 +120,7 @@ function status_label(string $s):string{return match($s) {
 <?php endforeach;?>
 </div>
 </section>
+<div class="accounts-shortcut"><div><strong>Pengajuan Pelayanan dan Persetujuan Berjenjang</strong><p>Pantau pengajuan baru yang dibuat warga, pemeriksaan PTSP, serta keputusan Lurah, tanpa mengubah arsip pelayanan lama.</p></div><a class="btn outline" href="/pengajuan-warga.php">Buka Pengajuan Baru →</a></div>
 <section class="guide" aria-label="Catatan pelaksanaan">
 <div><span class="eyebrow">PENGENDALIAN DAN AKUNTABILITAS</span><h2>Setiap modul, satu pusat kendali.</h2><p>Super Admin dapat melihat ringkasan lintas database dan menuju masing-masing modul sesuai kewenangan. Pembaruan progres dicatat dalam audit sistem. Data pegawai serta data warga tidak dipublikasikan pada panel ringkasan ini.</p></div>
 <a href="/pusat-kendali.php" class="btn outline">Lihat Ringkasan Administrator ↗</a>
