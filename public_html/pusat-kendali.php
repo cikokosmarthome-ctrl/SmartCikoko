@@ -90,7 +90,7 @@ $auditLast7Days=$ready['smartapp']?summary_number('smartapp','SELECT COUNT(*) FR
 <body>
 <div class="topline"><div class="wrap"><span>PEMERINTAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA</span><span>KECAMATAN PANCORAN · JAKARTA SELATAN</span></div></div>
 <header class="mainbar"><div class="wrap navigation">
-  <a class="brand" href="/"><span class="brandmark">KC</span><span><b>KELURAHAN CIKOKO</b><small>Portal Pelayanan dan Informasi Terpadu</small></span></a>
+  <a class="brand" href="/"><img class="brand-logo" src="/assets/jaya-raya.png" alt="Lambang Jakarta" width="44" height="48"><span><b>KELURAHAN CIKOKO</b><small>Portal Pelayanan dan Informasi Terpadu</small></span></a>
   <nav aria-label="Navigasi administrator">
     <a href="/">Beranda</a>
     <a href="/?page=dashboard">Ruang Kerja</a>
