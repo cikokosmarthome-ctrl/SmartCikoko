@@ -60,8 +60,35 @@ jobs:
           Paket hanya menambahkan berkas baru: tidak menimpa dashboard yang sudah berjalan.
           Checklist 100 persen BUKAN izin operasional atau sertifikasi keamanan.
           HELP
+          rm -f paket/SmartCikoko-TAHAP12-KESIAPAN.zip
           (cd staging && zip -q -X -r ../paket/SmartCikoko-TAHAP12-KESIAPAN.zip .)
           unzip -t paket/SmartCikoko-TAHAP12-KESIAPAN.zip
+          unzip -Z1 paket/SmartCikoko-TAHAP12-KESIAPAN.zip
+          if unzip -Z1 paket/SmartCikoko-TAHAP12-KESIAPAN.zip | grep -Eq '^public_html/super-admin.php
+      - name: Simpan ZIP di repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP12-KESIAPAN.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 12 cPanel package"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP12-KESIAPAN
+          path: paket/SmartCikoko-TAHAP12-KESIAPAN.zip
+          retention-days: 30
+; then
+            echo 'ERROR: Existing Super Admin dashboard must not be overwritten'
+            exit 1
+          fi
+          for file in portal_private/release_readiness.php public_html/kesiapan-produksi.php public_html/instal-kesiapan.php public_html/assets/kesiapan-produksi.css public_html/assets/instal-kesiapan.css; do
+            unzip -Z1 paket/SmartCikoko-TAHAP12-KESIAPAN.zip | grep -Fxq "$file"
+          done
       - name: Simpan ZIP di repository
         shell: bash
         run: |
