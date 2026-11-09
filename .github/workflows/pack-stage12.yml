@@ -43,7 +43,7 @@ jobs:
           set -euo pipefail
           mkdir -p staging/portal_private staging/public_html/assets paket
           cp portal_private/release_readiness.php staging/portal_private/
-          cp public_html/kesiapan-produksi.php public_html/instal-kesiapan.php public_html/super-admin.php staging/public_html/
+          cp public_html/kesiapan-produksi.php public_html/instal-kesiapan.php staging/public_html/
           cp public_html/assets/kesiapan-produksi.css public_html/assets/instal-kesiapan.css staging/public_html/assets/
           cat > staging/BACA-TAHAP12.txt <<'HELP'
           SMARTCIKOKO TAHAP 12 - KESIAPAN PRODUKSI
@@ -57,6 +57,7 @@ jobs:
           8. Hapus public_html/instal-kesiapan.php dan ZIP dari hosting.
           Jangan gunakan data warga nyata untuk pengujian sebelum keamanan dinilai.
           TIDAK perlu membuka phpMyAdmin ataupun impor ulang SQL.
+          Paket hanya menambahkan berkas baru: tidak menimpa dashboard yang sudah berjalan.
           Checklist 100 persen BUKAN izin operasional atau sertifikasi keamanan.
           HELP
           (cd staging && zip -q -X -r ../paket/SmartCikoko-TAHAP12-KESIAPAN.zip .)
