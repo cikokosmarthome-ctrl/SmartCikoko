@@ -141,6 +141,12 @@ function t9_transition(array $actor,int $id,int $version,string $to,string $note
         $q=$db->prepare('UPDATE unified_citizen_requests SET status=?,version=version+1,updated_at=NOW() WHERE id=?');
         $q->execute([$to,$id]);
         t9_history_insert($db,$id,$from,$to,'status_changed',$note,$actor);
+        // Notifications are optional until Stage 10 has been installed.
+        $followup=__DIR__.'/citizen_followup.php';
+        if(is_file($followup)){
+            require_once $followup;
+            if(t10_ready())t10_notify($db,$id,(string)$row['account_id'],$to);
+        }
         $db->commit();
     }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
 }
