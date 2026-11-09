@@ -24,6 +24,7 @@ class _CitizenRequestsState extends State<CitizenRequestsScreen> {
     'saudara': 'Saudara', 'lainnya': 'Hubungan Lainnya'
   };
   List<Map<String, dynamic>> requests = [];
+  List<Map<String, dynamic>> notifications = [];
   Map<String, dynamic>? selected;
   List<Map<String, dynamic>> history = [];
   bool busy = true;
@@ -64,6 +65,13 @@ class _CitizenRequestsState extends State<CitizenRequestsScreen> {
     try {
       final data = await api('citizen_list', query: {'page': page.toString()});
       final details = Map<String, dynamic>.from(data['data'] as Map);
+      if (citizen) {
+        try {
+          final noticeResponse = await api('citizen_notifications');
+          final noticeData = noticeResponse['data'] as List? ?? [];
+          notifications = noticeData.map((v) => Map<String, dynamic>.from(v as Map)).toList();
+        } catch (_) { notifications = []; /* Tahap 10 belum dipasang: alur dasar tetap berjalan. */ }
+      }
       if (!mounted) return;
       setState(() {
         requests = (details['rows'] as List? ?? [])
@@ -77,7 +85,21 @@ class _CitizenRequestsState extends State<CitizenRequestsScreen> {
     }
   }
 
-  Future<void> detail(int id) async {
+  Future<void> markNotificationRead(int id) async {
+    try {
+      await api('citizen_notice_read', body: {'id': id});
+      if (!mounted) return;
+      setState(() {
+        for (final n in notifications) {
+          if (n['id'] == id) n['read_at'] = 'dibaca';
+        }
+      });
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    }
+  }
+
+    Future<void> detail(int id) async {
     setState(() { busy = true; error = null; });
     try {
       final response = await api('citizen_detail', query: {'id': id.toString()});
@@ -252,6 +274,24 @@ class _CitizenRequestsState extends State<CitizenRequestsScreen> {
         if (busy) const Center(child: CircularProgressIndicator()),
         if (error != null) Card(child: Padding(padding: const EdgeInsets.all(16),
           child: Text(error!, style: const TextStyle(color: Colors.red)))),
+        if (citizen && notifications.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          const Text('Pemberitahuan Pelayanan',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          for (final notice in notifications.take(8))
+            Card(child: ListTile(
+              leading: Icon(notice['read_at'] == null
+                  ? Icons.notifications_active_outlined : Icons.notifications_none),
+              title: Text((notice['message'] ?? '').toString()),
+              subtitle: Text((notice['created_at'] ?? '').toString()),
+              trailing: notice['read_at'] == null
+                  ? TextButton(onPressed: () =>
+                      markNotificationRead((notice['id'] as num).toInt()),
+                      child: const Text('Dibaca'))
+                  : null,
+              onTap: () => detail((notice['request_id'] as num).toInt()),
+            )),
+        ],
         const SizedBox(height: 14),
         Text(citizen ? 'Pengajuan Saya' : 'Daftar Permohonan',
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
