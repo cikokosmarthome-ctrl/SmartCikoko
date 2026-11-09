@@ -82,7 +82,7 @@ function s13_identity_key(array $actor):array {
     return [$src,$id];
 }
 function s13_enrolled(array $actor):bool {
-    if(!s13_installed())return false;
+    // Check enrollment independently of key availability: a missing key must never disable MFA.
     [$src,$id]=s13_identity_key($actor);
     $q=db('smartapp')->prepare('SELECT 1 FROM unified_super_mfa WHERE actor_source=? AND actor_id=? AND enrolled_at IS NOT NULL');
     $q->execute([$src,$id]);
