@@ -1,0 +1,62 @@
+name: Paket Tahap 5 Direktori Akun
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public_html/direktori-akun.php'
+      - 'public_html/assets/direktori-akun.css'
+      - 'public_html/super-admin.php'
+      - 'public_html/assets/super-admin.css'
+      - '.github/workflows/pack-account-directory.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: paket-direktori-akun
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Siapkan pembaruan aman, tanpa database
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staging/public_html/assets paket
+          cp public_html/direktori-akun.php staging/public_html/
+          cp public_html/super-admin.php staging/public_html/
+          cp public_html/assets/direktori-akun.css staging/public_html/assets/
+          cp public_html/assets/super-admin.css staging/public_html/assets/
+          cat > staging/PETUNJUK-TAHAP5.txt <<'HELP'
+          SMARTCIKOKO - DIREKTORI AKUN TERPADU
+          1. Backup public_html/super-admin.php dan public_html/assets/super-admin.css.
+          2. Upload ZIP ke /home/datd1747/ dari cPanel File Manager.
+          3. Extract di /home/datd1747/ (BUKAN di public_html).
+          4. Jika diminta, konfirmasi replace hanya empat berkas dari paket.
+          5. Login Super Admin dan kunjungi /direktori-akun.php.
+          6. Uji bahwa akun biasa tidak boleh membuka direktori.
+          7. Hapus ZIP dari hosting setelah berhasil.
+
+          Tidak mengubah database, role, password maupun koneksi cPanel.
+          HELP
+          (cd staging && zip -q -X -r ../paket/SmartCikoko-TAHAP5-DIREKTORI.zip .)
+          unzip -t paket/SmartCikoko-TAHAP5-DIREKTORI.zip
+      - name: Simpan ZIP pembaruan di GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP5-DIREKTORI.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish safe Stage 5 account directory ZIP"
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP5-DIREKTORI
+          path: paket/SmartCikoko-TAHAP5-DIREKTORI.zip
+          retention-days: 30
