@@ -76,7 +76,7 @@ $role=t9_is_citizen($actor)?'warga':(t9_staff_role($actor)?:'superadmin');
 <div class="topline"><div class="wrap"><span>PEMERINTAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA</span><span>KECAMATAN PANCORAN · JAKARTA SELATAN</span></div></div>
 <header class="nav"><div class="wrap navinner">
 <a href="/" class="brand"><span class="logo">KC</span><span><strong>KELURAHAN CIKOKO</strong><small>Portal Pelayanan dan Administrasi Terpadu</small></span></a>
-<nav><a href="/">Beranda</a><a href="/?page=dashboard">Ruang Kerja</a><a class="selected" href="/pengajuan-warga.php">Pengajuan Pelayanan</a>
+<nav><a href="/">Beranda</a><a href="/?page=dashboard">Ruang Kerja</a><a class="selected" href="/pengajuan-warga.php">Pengajuan Pelayanan</a><a href="/tindak-lanjut.php">Lampiran & Pemberitahuan</a>
 <?php if(is_super_admin($actor)):?><a href="/super-admin.php">Pusat Super Admin</a><?php endif;?></nav>
 </div></header>
 <section class="hero"><div class="wrap hero-inner"><div><span class="kicker">LAYANAN DIGITAL KELURAHAN CIKOKO</span>
