@@ -149,9 +149,11 @@ function t8_upload(array $actor,int $appId,string $type,array $upload):void {
 }
 function t8_download(array $actor,int $fileId):never {
     if(!is_super_admin($actor) || $fileId<1){http_response_code(403);exit('Akses ditolak.');}
-    $stmt=db('smartapp')->prepare('SELECT original_name,stored_name,mime_type,file_size FROM unified_case_files WHERE id=? LIMIT 1');
+    $stmt=db('smartapp')->prepare('SELECT original_name,stored_name,mime_type,file_size,sha256 FROM unified_case_files WHERE id=? LIMIT 1');
     $stmt->execute([$fileId]);$file=$stmt->fetch(PDO::FETCH_ASSOC);
     if(!$file || !preg_match('/^[a-f0-9]{48}\.(pdf|jpg|png)$/D',(string)$file['stored_name'])){http_response_code(404);exit('Berkas tidak ditemukan.');}
+    require_once __DIR__.'/archive_security.php';
+    t11_require_intact('pelayanan',$file);
     $path=t8_storage_dir().'/'.$file['stored_name'];
     if(!is_file($path)||is_link($path)){http_response_code(404);exit('Berkas tidak ditemukan.');}
     $safeName=preg_replace('/[^a-zA-Z0-9._-]/','_',(string)$file['original_name'])?:'dokumen';
