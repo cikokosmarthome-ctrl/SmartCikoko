@@ -71,6 +71,9 @@ if($id!==''){
         }
     }catch(Throwable $e){error_log('Account management detail unavailable.');$error='Rincian pengaturan akun belum dapat dibuka.';}
 }
+$recent=[];
+try{$recent=control_recent_changes(15);}
+catch(Throwable $e){error_log('Stage 6 change history not available.');}
 ?>
 <!doctype html><html lang="id"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -151,6 +154,14 @@ $mode=$grants[$ability]??'default';?>
 <?php endif;?>
 <?php endif;?>
 </section></div>
+<section class="audit-panel"><div class="audit-head"><span class="eyebrow">PENCATATAN AKTIVITAS</span><h2>Riwayat Perubahan Akses</h2><p>15 perubahan terakhir pada pengaturan akun dan izin modul.</p></div>
+<div class="audit-table-wrap"><table><thead><tr><th>Waktu</th><th>Sumber</th><th>ID Akun</th><th>Pengaturan</th><th>Perubahan</th></tr></thead><tbody>
+<?php if(!$recent):?><tr><td colspan="5">Belum terdapat perubahan yang tercatat.</td></tr><?php endif;?>
+<?php foreach($recent as $change):?>
+<tr><td><?=h($change['changed_at'])?> WIB</td><td><?=h($names[$change['actor_source']]??$change['actor_source'])?></td><td><a href="<?=h(ulink($change['actor_source'],'',(string)$change['actor_id']))?>"><?=h($change['actor_id'])?></a></td>
+<td><?=h($change['action_type']==='login'?'Status Login':strtoupper($change['ability']))?></td>
+<td><?=h(control_badge($change['old_value']))?> → <?=h(control_badge($change['new_value']))?></td></tr>
+<?php endforeach;?></tbody></table></div></section>
 <div class="message info"><strong>Pengelolaan Aman dan Akuntabel</strong><p>Kata sandi, NIK, dan data pribadi sensitif tidak ditampilkan. Perubahan dicatat pada audit. Hak Super Admin tidak dapat diberikan dari halaman ini. Perubahan role sumber dan reset kata sandi memerlukan mekanisme verifikasi tambahan.</p></div>
 </div></main>
 <footer><div class="wrap">© <?=date('Y')?> Kelurahan Cikoko · Manajemen Pengguna Terpadu <a href="/super-admin.php">Pusat Super Admin</a></div></footer>
