@@ -1,0 +1,83 @@
+name: Paket Tahap 11 Arsip dan Keamanan
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/archive_security.php'
+      - 'portal_private/document_workflow.php'
+      - 'portal_private/citizen_followup.php'
+      - 'public_html/arsip-keamanan.php'
+      - 'public_html/draf-administrasi.php'
+      - 'public_html/instal-arsip.php'
+      - 'public_html/super-admin.php'
+      - 'public_html/assets/arsip-keamanan.css'
+      - 'public_html/assets/draf-administrasi.css'
+      - 'public_html/assets/instal-arsip.css'
+      - 'tests/stage11-integrity.php'
+      - '.github/workflows/pack-stage11.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage11-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,fileinfo
+          tools: none
+      - name: Periksa sintaks PHP Tahap 11
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/archive_security.php portal_private/document_workflow.php portal_private/citizen_followup.php public_html/arsip-keamanan.php public_html/draf-administrasi.php public_html/instal-arsip.php public_html/super-admin.php; do
+            php -l "$f"
+          done
+      - name: Uji integritas berkas dummy tanpa data pribadi
+        run: php tests/stage11-integrity.php
+      - name: Siapkan arsip instalasi cPanel
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staging/portal_private staging/public_html/assets paket
+          cp portal_private/archive_security.php portal_private/document_workflow.php portal_private/citizen_followup.php staging/portal_private/
+          cp public_html/arsip-keamanan.php public_html/draf-administrasi.php public_html/instal-arsip.php public_html/super-admin.php staging/public_html/
+          cp public_html/assets/arsip-keamanan.css public_html/assets/draf-administrasi.css public_html/assets/instal-arsip.css staging/public_html/assets/
+          cat > staging/BACA-TAHAP11.txt <<'HELP'
+          SMARTCIKOKO TAHAP 11 - PENGELOLAAN ARSIP
+          1. Backup database SmartApp dan file PHP yang diganti.
+          2. Upload ZIP ke /home/datd1747/ melalui cPanel File Manager.
+          3. Extract di /home/datd1747/ (JANGAN di public_html).
+          4. Login sebagai Super Administrator.
+          5. Buka https://datawebs.my.id/instal-arsip.php
+          6. Klik Pasang Tahap 11.
+          7. Buka https://datawebs.my.id/arsip-keamanan.php
+          8. Uji hanya dengan file DUMMY, bukan dokumen warga asli.
+          9. Hapus public_html/instal-arsip.php dan ZIP setelah berhasil.
+          Pemeriksaan SHA-256 BUKAN antivirus ataupun verifikasi keaslian.
+          Draf surat bertanda DRAF / TIDAK SAH bukan surat resmi.
+          HELP
+          (cd staging && zip -q -X -r ../paket/SmartCikoko-TAHAP11-ARSIP.zip .)
+          unzip -t paket/SmartCikoko-TAHAP11-ARSIP.zip
+      - name: Simpan ZIP paket siap upload
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP11-ARSIP.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish safe SmartCikoko Stage 11 cPanel ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP11-ARSIP
+          path: paket/SmartCikoko-TAHAP11-ARSIP.zip
+          retention-days: 30
