@@ -2,11 +2,9 @@
 declare(strict_types=1);
 
 /**
- * Hak Super Administrator hanya berdasarkan allowlist identitas yang disimpan
- * di portal_private/config.php di luar public_html.
- *
- * TIDAK mengubah role asli di database pegawai/smartapp.
- * TIDAK menjadikan seluruh akun administrator sebagai Super Admin.
+ * Super Administrator: identitas ditetapkan secara privat melalui aktivasi
+ * satu kali, tanpa mengubah tabel akun atau hak peran pengguna lain.
+ * Prioritas: super_admin_access.php (wizard), fallback config.php (manual).
  */
 function is_super_admin(?array $candidate=null): bool {
     $candidate ??= actor();
@@ -14,7 +12,8 @@ function is_super_admin(?array $candidate=null): bool {
     $source=(string)($candidate['source']??'');
     $id=(string)($candidate['id']??'');
     if (!in_array($source,['pegawai','smartapp'],true) || $id==='') return false;
-    $allowlist=cfg()['super_admin_accounts']??[];
+    $accessFile=__DIR__.'/super_admin_access.php';
+    $allowlist=is_file($accessFile) ? require $accessFile : (cfg()['super_admin_accounts']??[]);
     if (!is_array($allowlist)) return false;
     $allowed=false;
     foreach ($allowlist as $row) {
