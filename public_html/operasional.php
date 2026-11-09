@@ -76,7 +76,7 @@ try {
 <header class="nav"><div class="wrap nav-inner">
 <a href="/" class="brand"><span class="monogram">KC</span><span><strong>KELURAHAN CIKOKO</strong><small>Portal Pelayanan dan Administrasi Terpadu</small></span></a>
 <nav class="navlinks" aria-label="Navigasi operasional">
-<a href="/">Beranda</a><a href="/super-admin.php">Pusat Super Admin</a><a href="/kelola-pengguna.php">Manajemen Pengguna</a><a class="selected" href="/operasional.php">Operasional</a>
+<a href="/">Beranda</a><a href="/super-admin.php">Pusat Super Admin</a><a href="/kelola-pengguna.php">Manajemen Pengguna</a><a class="selected" href="/operasional.php">Operasional</a><a href="/verifikasi-layanan.php">Verifikasi & Laporan</a>
 </nav></div></header>
 <main>
 <section class="hero"><div class="wrap hero-inner"><div><span class="kicker">PENGELOLAAN LAYANAN DAN ADMINISTRASI</span><h1>Pusat Operasional</h1>
