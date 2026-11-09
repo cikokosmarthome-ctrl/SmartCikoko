@@ -7,6 +7,9 @@ try {
 } catch(Throwable $e) {
     http_response_code(503);exit('Sistem belum tersedia. Hubungi pengelola aplikasi.');
 }
+if (!function_exists('require_super_admin')) {
+    require_once dirname(__DIR__).'/portal_private/super_admin.php';
+}
 $actor=require_super_admin();
 $errors='';
 $notice=(string)($_SESSION['super_admin_notice']??'');
