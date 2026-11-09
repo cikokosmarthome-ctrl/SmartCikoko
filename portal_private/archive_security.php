@@ -91,7 +91,7 @@ function t11_inventory(string $source,int $page=1):array {
     $count=(int)$pdo->query('SELECT COUNT(*) FROM '.$cfg['table'])->fetchColumn();
     $pages=max(1,(int)ceil($count/$limit));
     $page=min($page,$pages);
-    $q=$pdo->prepare('SELECT f.id,f.'.$cfg['parent'].' AS parent_id,f.doc_type,f.file_size,f.created_at,COALESCE(r.review_status,"belum") AS review_status,COALESCE(r.integrity_status,"belum") AS integrity_status,COALESCE(r.preserve_flag,0) AS preserve_flag,r.checked_at FROM '.$cfg['table'].' f LEFT JOIN unified_archive_registry r ON r.source_key=? AND r.file_id=f.id ORDER BY f.id DESC LIMIT ? OFFSET ?');
+    $q=$pdo->prepare('SELECT f.id,f.'.$cfg['parent'].' AS parent_id,f.doc_type,f.file_size,f.created_at,COALESCE(r.review_status,\'belum\') AS review_status,COALESCE(r.integrity_status,\'belum\') AS integrity_status,COALESCE(r.preserve_flag,0) AS preserve_flag,r.checked_at FROM '.$cfg['table'].' f LEFT JOIN unified_archive_registry r ON r.source_key=? AND r.file_id=f.id ORDER BY f.id DESC LIMIT ? OFFSET ?');
     $q->bindValue(1,$source,PDO::PARAM_STR);
     $q->bindValue(2,$limit,PDO::PARAM_INT);
     $q->bindValue(3,($page-1)*$limit,PDO::PARAM_INT);
