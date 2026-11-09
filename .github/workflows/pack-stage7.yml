@@ -1,0 +1,74 @@
+name: Paket Tahap 7 Pusat Operasional
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/operational_center.php'
+      - 'public_html/operasional.php'
+      - 'public_html/instal-operasional.php'
+      - 'public_html/assets/operasional.css'
+      - 'public_html/assets/instal-operasional.css'
+      - 'public_html/super-admin.php'
+      - '.github/workflows/pack-stage7.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage7-pack
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: none
+      - name: Periksa sintaks sebelum dibuat ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l portal_private/operational_center.php
+          php -l public_html/operasional.php
+          php -l public_html/instal-operasional.php
+          php -l public_html/super-admin.php
+      - name: Siapkan berkas operasional
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staging/portal_private staging/public_html/assets paket
+          cp portal_private/operational_center.php staging/portal_private/
+          cp public_html/operasional.php public_html/instal-operasional.php public_html/super-admin.php staging/public_html/
+          cp public_html/assets/operasional.css public_html/assets/instal-operasional.css staging/public_html/assets/
+          cat > staging/PETUNJUK-TAHAP7.txt <<'HELP'
+          SMARTCIKOKO TAHAP 7 - PUSAT OPERASIONAL
+          1. Backup database SmartApp dan public_html/super-admin.php.
+          2. Upload ZIP ini ke /home/datd1747/ lalu Extract.
+          3. Login sebagai akun Super Administrator.
+          4. Buka https://datawebs.my.id/instal-operasional.php
+          5. Klik Pasang Pusat Operasional.
+          6. Buka https://datawebs.my.id/operasional.php
+          7. Uji status dan peninjauan pada data uji.
+          8. Hapus public_html/instal-operasional.php dan ZIP dari hosting.
+          TIDAK PERLU IMPORT SQL LAMA.
+          HELP
+          (cd staging && zip -q -X -r ../paket/SmartCikoko-TAHAP7-OPERASIONAL.zip .)
+          unzip -t paket/SmartCikoko-TAHAP7-OPERASIONAL.zip
+      - name: Simpan ZIP di GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP7-OPERASIONAL.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 7 operational cPanel ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP7-OPERASIONAL
+          path: paket/SmartCikoko-TAHAP7-OPERASIONAL.zip
+          retention-days: 30
