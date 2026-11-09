@@ -40,6 +40,21 @@ try {
         $citizen=t9_actor($u);
         if(!$citizen)respond(['ok'=>false,'error'=>'Sesi atau hak akses akun tidak valid.'],401);
         try{
+            if(in_array($resource,['citizen_notifications','citizen_notice_read','citizen_files','citizen_pending'],true)){
+                require_once dirname(__DIR__,2).'/portal_private/citizen_followup.php';
+                if(!t10_ready())respond(['ok'=>false,'error'=>'Modul tindak lanjut belum terpasang.'],503);
+                if($resource==='citizen_notifications'&&$method==='GET')
+                    respond(['ok'=>true,'data'=>t10_notifications($citizen)]);
+                if($resource==='citizen_notice_read'&&$method==='POST'){
+                    t10_read_notification($citizen,(int)($body['id']??0));
+                    respond(['ok'=>true]);
+                }
+                if($resource==='citizen_files'&&$method==='GET')
+                    respond(['ok'=>true,'data'=>t10_files($citizen,(int)($_GET['id']??0))]);
+                if($resource==='citizen_pending'&&$method==='GET')
+                    respond(['ok'=>true,'data'=>t10_pending_counts($citizen)]);
+                respond(['ok'=>false,'error'=>'Metode tidak diizinkan.'],405);
+            }
             if($resource==='citizen_list'&&$method==='GET')
                 respond(['ok'=>true,'data'=>t9_list($citizen,max(1,(int)($_GET['page']??1)))]);
             if($resource==='citizen_detail'&&$method==='GET'){
