@@ -35,9 +35,8 @@ try {
         $security=dirname(__DIR__,2).'/portal_private/security_stage13.php';
         if(is_file($security)&&is_super_admin_identity($u)){
             require_once $security;
-            if(is_file(dirname(__DIR__,2).'/portal_private/mfa_key.php')&&!s13_installed())
-                respond(['ok'=>false,'error'=>'Layanan autentikasi tambahan belum tersedia.'],503);
-            if(s13_installed() && s13_enrolled($u)){
+            if(s13_enrolled($u)){
+                if(!s13_installed())respond(['ok'=>false,'error'=>'Layanan MFA tidak tersedia.'],503);
                 if(!isset($body['otp']) || trim((string)$body['otp'])==='')
                     respond(['ok'=>false,'mfa_required'=>true,'error'=>'Kode autentikator diperlukan.'],401);
                 throttle_login($identity.'|api-mfa');
