@@ -86,7 +86,7 @@ function t9_create(array $actor,string $deceased,string $relationship,string $pu
     }
     $db->beginTransaction();
     try{
-        $q=$db->prepare('INSERT INTO unified_citizen_requests(account_id,request_key,reference_no,applicant_name,deceased_name,relationship,purpose,status,version,created_at,updated_at) VALUES(?,?,"",?,?,?,?,"draf",1,NOW(),NOW()) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)');
+        $q=$db->prepare("INSERT INTO unified_citizen_requests(account_id,request_key,reference_no,applicant_name,deceased_name,relationship,purpose,status,version,created_at,updated_at) VALUES(?,?,'',?,?,?,?,'draf',1,NOW(),NOW()) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)");
         $q->execute([(string)$actor['id'],$nonce,mb_substr((string)$actor['name'],0,160),$deceased,$relationship,$purpose]);
         $id=(int)$db->lastInsertId();
         $q=$db->prepare('SELECT reference_no FROM unified_citizen_requests WHERE id=? FOR UPDATE');
