@@ -1,0 +1,5 @@
+Options -Indexes
+<FilesMatch "^(?:\.env|config\.php|composer\.(json|lock)|.*\.(sql|log|bak|zip))$">
+  Require all denied
+</FilesMatch>
+Header always set X-Content-Type-Options "nosniff"
