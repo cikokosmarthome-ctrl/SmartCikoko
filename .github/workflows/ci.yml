@@ -1,0 +1,36 @@
+name: Kualitas SmartCikoko
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  php:
+    name: Periksa sintaks PHP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: none
+      - name: Pemeriksaan sintaks berkas PHP
+        run: |
+          set -eu
+          find public_html portal_private tools -type f -name '*.php' -print0 | xargs -0 -n 1 php -l
+  flutter:
+    name: Periksa kode Flutter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Install package Flutter
+        working-directory: android_flutter
+        run: flutter pub get
+      - name: Analisis Flutter
+        working-directory: android_flutter
+        run: flutter analyze
