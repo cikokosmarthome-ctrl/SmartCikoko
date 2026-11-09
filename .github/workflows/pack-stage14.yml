@@ -1,0 +1,112 @@
+name: Paket Tahap 14 & Perbaikan Beranda
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public_html/assets/style.css'
+      - 'portal_private/security_audit14.php'
+      - 'public_html/uji-keamanan14.php'
+      - 'public_html/assets/uji-keamanan14.css'
+      - 'tests/stage14-security.php'
+      - '.github/workflows/pack-stage14.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage14-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,fileinfo,openssl
+          tools: none
+      - name: PHP sintaks
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l portal_private/security_audit14.php
+          php -l public_html/uji-keamanan14.php
+      - name: Pemeriksaan simulasi keamanan tanpa database
+        run: php tests/stage14-security.php
+      - name: Pemeriksaan struktur CSS
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          css = Path('public_html/assets/style.css').read_text()
+          assert css.count('{') == css.count('}'), 'Unbalanced homepage CSS'
+          assert '.hero .hero-grid' in css
+          assert '.header nav a' in css
+          assert '@media(max-width:760px)' in css
+          assert 'https://fonts.googleapis.com' not in css
+          print('Homepage CSS structure checks passed')
+          PY
+      - name: Build two independent cPanel ZIPs
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage14_home stage14_security
+          mkdir -p stage14_home/public_html/assets stage14_security/portal_private stage14_security/public_html/assets paket
+          cp public_html/assets/style.css stage14_home/public_html/assets/
+          cp portal_private/security_audit14.php stage14_security/portal_private/
+          cp public_html/uji-keamanan14.php stage14_security/public_html/
+          cp public_html/assets/uji-keamanan14.css stage14_security/public_html/assets/
+          cat > stage14_home/BACA-PERBAIKAN-BERANDA.txt <<'HELP'
+          PERBAIKAN BERANDA SMARTCIKOKO
+          Backup file public_html/assets/style.css di lokasi privat.
+          Upload ZIP ke /home/datd1747/ dan Extract dari direktori ini.
+          Paket ini HANYA mengganti public_html/assets/style.css.
+          Buka https://datawebs.my.id dan gunakan Ctrl+F5.
+          Tidak ada file login, PHP, MFA, atau database yang diubah.
+          HELP
+          cat > stage14_security/BACA-TAHAP14-KEAMANAN.txt <<'HELP'
+          SMARTCIKOKO TAHAP 14 - AUDIT KEAMANAN BACA-SAJA
+          Backup file website dan kedua database dahulu.
+          Upload ZIP ke /home/datd1747/ dan Extract.
+          Tidak ada file lama yang ditimpa; tidak perlu SQL manual.
+          Login Super Admin dengan MFA, lalu buka:
+          https://datawebs.my.id/uji-keamanan14.php
+          Scanner belum aktif tidak berarti berkas warga aman diunggah.
+          Gunakan data dummy saat uji keamanan akses.
+          HELP
+          rm -f paket/SmartCikoko-PERBAIKAN-BERANDA.zip paket/SmartCikoko-TAHAP14-KEAMANAN.zip
+          (cd stage14_home && zip -q -X -r ../paket/SmartCikoko-PERBAIKAN-BERANDA.zip .)
+          (cd stage14_security && zip -q -X -r ../paket/SmartCikoko-TAHAP14-KEAMANAN.zip .)
+          unzip -t paket/SmartCikoko-PERBAIKAN-BERANDA.zip
+          unzip -t paket/SmartCikoko-TAHAP14-KEAMANAN.zip
+          for file in portal_private/security_audit14.php public_html/uji-keamanan14.php public_html/assets/uji-keamanan14.css; do
+            unzip -Z1 paket/SmartCikoko-TAHAP14-KEAMANAN.zip | grep -Fxq "$file"
+          done
+          if unzip -Z1 paket/SmartCikoko-PERBAIKAN-BERANDA.zip | grep -Eq '(^|/)(index|bootstrap|auth|config|super_admin)\.php$'; then
+            echo 'ERROR: homepage-only ZIP must not replace login or configuration'
+            exit 1
+          fi
+          if unzip -Z1 paket/SmartCikoko-TAHAP14-KEAMANAN.zip | grep -Eq '(^|/)(index|bootstrap|auth|config|super_admin)\.php$'; then
+            echo 'ERROR: security ZIP must not replace login or configuration'
+            exit 1
+          fi
+      - name: Publish safe ZIP packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-PERBAIKAN-BERANDA.zip paket/SmartCikoko-TAHAP14-KEAMANAN.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish Stage 14 audit and isolated homepage CSS repair ZIPs"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP14-DAN-BERANDA
+          path: |
+            paket/SmartCikoko-PERBAIKAN-BERANDA.zip
+            paket/SmartCikoko-TAHAP14-KEAMANAN.zip
+          retention-days: 30
