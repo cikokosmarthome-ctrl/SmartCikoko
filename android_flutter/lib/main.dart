@@ -20,6 +20,7 @@ class PortalApi {
       :await http.get(uri,headers:headers).timeout(const Duration(seconds:20));
    final parsed=jsonDecode(response.body);
    if(parsed is! Map<String,dynamic>)throw Exception('Format respons server tidak valid.');
+   if(resource=='login' && parsed['mfa_required']==true) return parsed;
    if(response.statusCode>=400||parsed['ok']!=true)throw Exception(
      (parsed['error']??'Permintaan tidak berhasil.').toString());
    return parsed;
@@ -143,21 +144,27 @@ class Login extends StatefulWidget{
  @override State<Login> createState()=>_LoginState();
 }
 class _LoginState extends State<Login>{
- final username=TextEditingController(),password=TextEditingController();
- bool busy=false,obscure=true;String? error;List<dynamic> choices=[];
- @override void dispose(){username.dispose();password.dispose();super.dispose();}
+ final username=TextEditingController(),password=TextEditingController(),otp=TextEditingController();
+ bool busy=false,obscure=true,mfaRequired=false;String? error;List<dynamic> choices=[];
+ Map<String,dynamic>? selectedAccount;
+ @override void dispose(){username.dispose();password.dispose();otp.dispose();super.dispose();}
  Future<void> submit([Map<String,dynamic>? selected])async{
    if(busy)return;
    setState((){busy=true;error=null;});
    try{
+     if(selected!=null) selectedAccount=selected;
+     final selectedUser=selected ?? selectedAccount;
      final r=await PortalApi.call('login',method:'POST',body:{
        'username':username.text.trim(),'password':password.text,
-       if(selected!=null)'source':selected['source'],
-       if(selected!=null)'id':selected['id']});
+       if(selectedUser!=null)'source':selectedUser['source'],
+       if(selectedUser!=null)'id':selectedUser['id'],
+       if(mfaRequired)'otp':otp.text.trim()});
      if(r['selection_required']==true){
        if(mounted)setState(()=>choices=r['accounts'] as List? ?? []);
+     }else if(r['mfa_required']==true){
+       if(mounted)setState(()=>mfaRequired=true);
      }else{
-       password.clear();widget.onLogin(r['token'].toString());
+       password.clear();otp.clear();widget.onLogin(r['token'].toString());
      }
    }catch(e){if(mounted)setState(()=>error=e.toString());}
    if(mounted)setState(()=>busy=false);
@@ -181,7 +188,20 @@ class _LoginState extends State<Login>{
        crossAxisAlignment:CrossAxisAlignment.start,children:[
        const Text('Masuk ke Ruang Kerja',style:TextStyle(fontSize:21,fontWeight:FontWeight.w800)),
        const SizedBox(height:15),
-       if(choices.isEmpty)...[
+       if(mfaRequired)...[
+         const Text('Kode keamanan tambahan diperlukan untuk akun Super Admin.',
+           style:TextStyle(fontSize:13)),
+         const SizedBox(height:15),
+         TextField(controller:otp,keyboardType:TextInputType.text,maxLength:19,
+           decoration:const InputDecoration(labelText:'Kode autentikator / cadangan',
+             border:OutlineInputBorder())),
+         const SizedBox(height:12),
+         FilledButton(onPressed:busy?null:()=>submit(),
+           child:const Text('Verifikasi Dua Langkah')),
+         TextButton(onPressed:busy?null:()=>setState((){
+           mfaRequired=false;otp.clear();selectedAccount=null;choices=[];
+         }),child:const Text('Kembali ke Login')),
+       ]else if(choices.isEmpty)...[
          TextField(controller:username,decoration:const InputDecoration(
            labelText:'Username atau Email',border:OutlineInputBorder())),
          const SizedBox(height:12),
