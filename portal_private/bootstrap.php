@@ -77,3 +77,16 @@ function respond(array $payload, int $status=200): never {http_response_code($st
 require_once __DIR__.'/auth.php';
 require_once __DIR__.'/data.php';
 require_once __DIR__.'/super_admin.php';
+/* Stage-13: after voluntary MFA enrolment, challenge Super Admin on all
+   browser pages, not just the dashboard. API Bearer tokens use separate MFA. */
+if(PHP_SAPI!=='cli' && basename((string)($_SERVER['SCRIPT_NAME']??''))!=='mfa.php'
+   && !str_contains((string)($_SERVER['SCRIPT_NAME']??''),'/api/')
+   && actor()!==null && is_file(__DIR__.'/security_stage13.php')){
+    require_once __DIR__.'/security_stage13.php';
+    $s13Actor=actor();
+    if(is_super_admin_identity($s13Actor) && s13_installed()
+       && s13_enrolled($s13Actor) && !s13_verified_session($s13Actor)){
+        header('Cache-Control: private, no-store');
+        header('Location: /mfa.php',true,303);exit;
+    }
+}
