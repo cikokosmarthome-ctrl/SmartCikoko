@@ -70,7 +70,11 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'&&!$ready){
 <?php if($error):?><div class="alert error"><?=h($error)?></div><?php endif;?>
 <?php if($ready):?>
 <div class="alert good"><b>Struktur keamanan Tahap 13 terpasang.</b> MFA tidak diwajibkan hingga Anda selesai mendaftar dan memverifikasi kode autentikator.</div>
+<?php if(function_exists('is_super_admin_identity')):?>
 <a class="button" href="/mfa.php">Daftarkan MFA Super Admin →</a>
+<?php else:?>
+<p><strong>Persiapan berhasil.</strong> Berikutnya, lakukan backup file inti dan pasang ZIP Aktivasi Tahap 13 sebelum membuka halaman MFA.</p>
+<?php endif;?>
 <p><a href="/keamanan-superadmin.php">Buka Dashboard Keamanan</a></p>
 <p class="footnote">Simpan kunci privat dalam backup terenkripsi, kemudian hapus file installer dan ZIP setelah seluruh pengujian berhasil.</p>
 <?php else:?>
