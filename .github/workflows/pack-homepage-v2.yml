@@ -1,0 +1,99 @@
+name: Perbaikan Beranda V2 Tanpa Mengganti Index
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/homepage_repair_v2.php'
+      - 'public_html/perbaiki-beranda-v2.php'
+      - 'public_html/assets/beranda-fix.css'
+      - 'tests/homepage-v2.php'
+      - '.github/workflows/pack-homepage-v2.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-homepage-v2-zip
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql
+          tools: none
+      - name: Lint PHP helper dan installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l portal_private/homepage_repair_v2.php
+          php -l public_html/perbaiki-beranda-v2.php
+      - name: Test patch dan backup tanpa database
+        run: php tests/homepage-v2.php
+      - name: Validasi stylesheet versi baru
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          css=Path('public_html/assets/beranda-fix.css').read_text()
+          assert 'SMARTCIKOKO_BERANDA_FIX_V2_20261110' in css
+          assert css.count('{')==css.count('}')
+          assert '.header nav' in css
+          assert '.hero .hero-grid' in css
+          assert '.hero .hero-visual' in css
+          assert 'https://fonts.googleapis.com' not in css
+          print('Standalone cache-busting CSS V2 verified')
+          PY
+      - name: Susun ZIP minimal yang tidak menimpa index dan MFA
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf rescue_v2
+          mkdir -p rescue_v2/portal_private rescue_v2/public_html/assets paket
+          cp portal_private/homepage_repair_v2.php rescue_v2/portal_private/
+          cp public_html/perbaiki-beranda-v2.php rescue_v2/public_html/
+          cp public_html/assets/beranda-fix.css rescue_v2/public_html/assets/
+          cat > rescue_v2/BACA-PERBAIKAN-BERANDA-V2.txt <<'HELP'
+          SMARTCIKOKO PERBAIKAN BERANDA V2
+          1. Backup website sebelum melanjutkan.
+          2. Upload ZIP ke /home/datd1747/ dan Extract dari sana.
+          3. Login Super Admin dengan MFA seperti biasa.
+          4. Buka https://datawebs.my.id/perbaiki-beranda-v2.php
+          5. Pastikan CSS V2 dan struktur index.php bertanda Siap/Sesuai.
+          6. Klik Perbaiki Tampilan Beranda.
+          7. Buka Beranda melalui tombol hasil perbaikan.
+          8. Setelah sukses, hapus public_html/perbaiki-beranda-v2.php dan ZIP.
+          Backup index.php akan tersimpan otomatis di portal_private/beranda_backups/.
+          TIDAK mengganti index.php melalui ZIP, tidak menyentuh MFA/SQL.
+          Jika struktur index.php berbeda, installer menolak perubahan.
+          HELP
+          rm -f paket/SmartCikoko-PERBAIKAN-BERANDA-V2.zip
+          (cd rescue_v2 && zip -q -X -r ../paket/SmartCikoko-PERBAIKAN-BERANDA-V2.zip .)
+          unzip -t paket/SmartCikoko-PERBAIKAN-BERANDA-V2.zip
+          for file in portal_private/homepage_repair_v2.php public_html/perbaiki-beranda-v2.php public_html/assets/beranda-fix.css; do
+            unzip -Z1 paket/SmartCikoko-PERBAIKAN-BERANDA-V2.zip | grep -Fxq "$file"
+          done
+          if unzip -Z1 paket/SmartCikoko-PERBAIKAN-BERANDA-V2.zip | grep -Eq '(^|/)(index|bootstrap|auth|config|super_admin|mfa)\.php$'; then
+            echo "ERROR: core PHP or MFA should never be overwritten by homepage V2 ZIP"
+            exit 1
+          fi
+      - name: Publikasikan ZIP ke repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-PERBAIKAN-BERANDA-V2.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko homepage V2 protected CSS repair ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-PERBAIKAN-BERANDA-V2
+          path: paket/SmartCikoko-PERBAIKAN-BERANDA-V2.zip
+          retention-days: 30
