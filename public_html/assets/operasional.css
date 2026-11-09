@@ -1,0 +1,46 @@
+
+.op-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin:20px 0 33px}
+.op-summary-card{background:#fff;border:1px solid #dfebf4;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.op-summary-card.active,.op-summary-card:hover{border-color:#70a6cf;box-shadow:0 10px 30px #12456810}
+.op-summary-card small{font-size:12px;font-weight:750;color:#52718c}
+.op-summary-card strong{font-size:31px;color:#165783}.op-summary-card span{font-size:10px;color:#8b9ead}
+.op-worklist,.op-history{border:1px solid #e0eaf3;background:#fff;padding:27px;border-radius:15px}
+.work-head h2,.op-history h2{font-size:23px;color:#133f60;margin:6px 0}
+.work-head p,.op-history p{font-size:13px;color:#7a8fa3;margin:4px 0 15px}
+.op-tabs{display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid #e6eef5;padding-bottom:18px;margin-bottom:21px}
+.op-tabs a{border:1px solid #dce9f2;color:#2c628b;border-radius:8px;padding:10px 14px;font-weight:750;font-size:12px}
+.op-tabs a.active{background:#145987;color:#fff;border-color:#145987}
+.op-search label{font-size:12px;color:#496b84;font-weight:750;display:block;margin-bottom:7px}
+.op-search>div{display:flex;gap:9px;flex-wrap:wrap}
+.op-search input{flex:1;min-width:200px;border:1px solid #ccdeed;border-radius:8px;padding:12px;color:#143a56}
+.op-search .btn{min-height:45px}
+.work-count{font-size:12px;color:#879cad;padding:18px 0 12px}
+.op-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.op-card{border:1px solid #dfeaf2;border-radius:11px;padding:20px;min-width:0}
+.op-record-title{display:flex;align-items:start;gap:14px;justify-content:space-between}
+.op-record-title small{font-size:10px;color:#7997a9;font-weight:800;letter-spacing:1.1px}
+.op-record-title h3{font-size:16px;color:#113d61;margin:4px 0}
+.op-record-title span:not(.op-badge){font-size:12px;color:#728b9e;overflow-wrap:anywhere}
+.op-badge{display:inline-flex;border-radius:100px;background:#eef3f8;color:#446f91;font-weight:800;font-size:10px;padding:6px 10px;white-space:nowrap}
+.op-meta{border-top:1px solid #e8eef4;padding:12px 0;margin-top:15px;display:flex;gap:12px;justify-content:space-between;color:#7090a3;font-size:11px}
+.op-meta span{overflow-wrap:anywhere}
+.op-note{border-radius:7px;background:#eef5fa;color:#6385a0;padding:11px;font-size:11px}
+.op-details{border-top:1px solid #e7eef5;padding-top:15px;margin-top:10px}
+.op-details summary{color:#145c90;font-weight:800;font-size:12px;cursor:pointer}
+.op-details form{margin-top:16px;display:grid;gap:13px}
+.op-details label{display:grid;gap:5px;font-size:12px;font-weight:700;color:#4b6c85}
+.op-details select,.op-details textarea{font:inherit;padding:11px;border-radius:7px;border:1px solid #c7d9e7;color:#1b4f73;width:100%}
+.op-details label.op-confirm{display:flex;align-items:start;gap:9px;color:#5b788f;font-size:11px;font-weight:500}
+.op-confirm input{margin-top:3px}
+.op-details .btn{justify-self:start}
+.op-pages{display:flex;gap:10px;justify-content:space-between;margin-top:23px}.op-pages a:last-child{margin-left:auto}
+.op-history{margin-top:23px}.op-table-wrap{overflow:auto;border:1px solid #e4edf4;border-radius:10px}
+.op-table-wrap table{border-collapse:collapse;min-width:630px;width:100%;font-size:12px}
+.op-table-wrap th{background:#edf4f9;text-align:left;color:#315c7c;padding:13px 15px}
+.op-table-wrap td{padding:12px 15px;border-top:1px solid #e7eef5;color:#55758d}
+.op-alert{border-radius:9px;margin-bottom:18px;padding:15px;font-size:13px}.op-alert.success{background:#e9f8ef;color:#1b7143}.op-alert.error{background:#fef0f0;color:#a24143}
+.op-notice{margin-top:28px;background:#e9f3fa;border:1px solid #d8e7f2;border-radius:10px;padding:22px}
+.op-notice strong{color:#205b88}.op-notice p{font-size:12px;color:#60809a;margin:7px 0 0}
+@media(max-width:1050px){.op-summary{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:800px){.op-cards{grid-template-columns:1fr}}
+@media(max-width:650px){.op-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.op-summary-card{padding:15px}.op-worklist,.op-history{padding:18px}.op-tabs{flex-wrap:nowrap;overflow:auto}.op-tabs a{white-space:nowrap}.op-record-title{flex-wrap:wrap}.op-meta{flex-direction:column}.op-search>div{display:grid;grid-template-columns:1fr 1fr}.op-search input{grid-column:span 2;min-width:0}}
