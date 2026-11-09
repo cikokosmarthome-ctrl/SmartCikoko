@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'citizen_requests.dart';
 
 const apiBase='https://datawebs.my.id/api/';
 const secure=FlutterSecureStorage();
@@ -65,6 +66,10 @@ class _PortalState extends State<Portal>{
  }
  List<Module> modules(){
    final modules=<Module>[];
+   if((user['source']=='smartapp' && ['warga','ptsp','lurah'].contains(user['role'])) ||
+       permissions['super_admin']==true) {
+     modules.add(const Module('Pengajuan Pelayanan','citizen_requests',Icons.fact_check_outlined));
+   }
    if(permissions['super_admin']==true)modules.add(const Module('Pusat Super Admin','superadmin_dashboard',Icons.admin_panel_settings_outlined));
    if(permissions['admin']==true)modules.add(const Module('Data Pegawai','pegawai',Icons.badge_outlined));
    if(permissions['pppk']==true)modules.add(const Module('Laporan PPPK','pppk',Icons.assignment_outlined));
@@ -84,9 +89,11 @@ class _PortalState extends State<Portal>{
        for(final m in modules())ListTile(leading:Icon(m.icon),title:Text(m.title),onTap:(){
          Navigator.pop(context);
          Navigator.push(context,MaterialPageRoute(builder:(_)=>
-           m.resource=='superadmin_dashboard'
-             ? SuperAdminPanel(token:token!)
-             : Records(resource:m.resource,token:token!,title:m.title)));
+           m.resource=='citizen_requests'
+             ? CitizenRequestsScreen(token:token!, user:user)
+             : m.resource=='superadmin_dashboard'
+               ? SuperAdminPanel(token:token!)
+               : Records(resource:m.resource,token:token!,title:m.title)));
        }),
        const Divider(),
        ListTile(leading:const Icon(Icons.logout),title:const Text('Keluar'),onTap:logout)
@@ -116,9 +123,11 @@ class _PortalState extends State<Portal>{
        for(final m in modules())Card(child:ListTile(leading:Icon(m.icon),title:Text(m.title),
          trailing:const Icon(Icons.arrow_forward_ios,size:15),
          onTap:()=>Navigator.push(context,MaterialPageRoute(
-          builder:(_)=>m.resource=='superadmin_dashboard'
-              ? SuperAdminPanel(token:token!)
-              : Records(resource:m.resource,token:token!,title:m.title))))),
+          builder:(_)=>m.resource=='citizen_requests'
+              ? CitizenRequestsScreen(token:token!, user:user)
+              : m.resource=='superadmin_dashboard'
+                ? SuperAdminPanel(token:token!)
+                : Records(resource:m.resource,token:token!,title:m.title))))),
        const SizedBox(height:20),const PublicNews()
      ])
    );
