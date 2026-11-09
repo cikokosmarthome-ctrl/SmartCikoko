@@ -6,7 +6,7 @@ declare(strict_types=1);
  * satu kali, tanpa mengubah tabel akun atau hak peran pengguna lain.
  * Prioritas: super_admin_access.php (wizard), fallback config.php (manual).
  */
-function is_super_admin(?array $candidate=null): bool {
+function is_super_admin_identity(?array $candidate=null): bool {
     $candidate ??= actor();
     if (!$candidate || !is_admin($candidate)) return false;
     $source=(string)($candidate['source']??'');
@@ -43,9 +43,37 @@ function is_super_admin(?array $candidate=null): bool {
     }
 }
 
+/** Actual Super Admin authorization includes the MFA challenge once enrolled. */
+function is_super_admin(?array $candidate=null):bool {
+    $candidate ??= actor();
+    if(!$candidate || !is_super_admin_identity($candidate))return false;
+    $f=__DIR__.'/security_stage13.php';
+    if(!is_file($f))return true; // before Stage 13 is installed, preserve legacy access
+    require_once $f;
+    if(!s13_installed() || !s13_enrolled($candidate))return true;
+    // REST API tokens need their own second-factor attestation, never web session state.
+    if(str_contains((string)($_SERVER['SCRIPT_NAME']??''),'/api/')){
+        $auth=(string)($_SERVER['HTTP_AUTHORIZATION']??$_SERVER['REDIRECT_HTTP_AUTHORIZATION']??'');
+        if(!preg_match('/^Bearer ([a-f0-9]{64})$/i',$auth,$m))return false;
+        return s13_api_attested($candidate,strtolower($m[1]));
+    }
+    $session=actor();
+    return $session!==null
+        && $session['source']===$candidate['source']
+        && hash_equals((string)$session['id'],(string)$candidate['id'])
+        && s13_verified_session($candidate);
+}
+
 function require_super_admin(): array {
     $user=requires_login();
     if (!is_super_admin($user)) {
+        $f=__DIR__.'/security_stage13.php';
+        if(is_super_admin_identity($user) && is_file($f)){
+            require_once $f;
+            if(s13_installed() && s13_enrolled($user) && !s13_verified_session($user)){
+                header('Location: /mfa.php',true,303);exit;
+            }
+        }
         http_response_code(403);
         header('Cache-Control: no-store');
         exit('Akses ditolak. Hanya Super Administrator terotorisasi.');
