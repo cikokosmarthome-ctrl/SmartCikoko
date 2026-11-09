@@ -84,9 +84,16 @@ function s13_identity_key(array $actor):array {
 function s13_enrolled(array $actor):bool {
     // Check enrollment independently of key availability: a missing key must never disable MFA.
     [$src,$id]=s13_identity_key($actor);
-    $q=db('smartapp')->prepare('SELECT 1 FROM unified_super_mfa WHERE actor_source=? AND actor_id=? AND enrolled_at IS NOT NULL');
-    $q->execute([$src,$id]);
-    return (bool)$q->fetchColumn();
+    try{
+        $q=db('smartapp')->prepare('SELECT 1 FROM unified_super_mfa WHERE actor_source=? AND actor_id=? AND enrolled_at IS NOT NULL');
+        $q->execute([$src,$id]);
+        return (bool)$q->fetchColumn();
+    }catch(Throwable $e){
+        // New files can be deployed before the installer creates the tables.
+        // Once a private MFA key exists, any schema failure must fail closed.
+        if(is_file(__DIR__.'/mfa_key.php'))throw new RuntimeException('Pemeriksaan MFA belum tersedia.',0,$e);
+        return false;
+    }
 }
 function s13_verified_session(array $actor):bool {
     $v=$_SESSION['s13_verified']??null;
