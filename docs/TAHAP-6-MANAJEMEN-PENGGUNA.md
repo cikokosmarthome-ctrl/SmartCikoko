@@ -9,7 +9,7 @@ Tahap 6 dipasang setelah Super Admin dan Direktori Akun aktif. Tujuannya: **meng
 3. cPanel Rumahweb → File Manager → masuk ke **\`/home/datd1747/\`** → Upload ZIP → Extract. **Jangan** ekstrak dari dalam \`public_html\`. Paket hanya menambah file baru dan memperbarui file publik Super Admin/Direktori.
 4. Login menggunakan akun **Super Administrator**.
 5. Buka \`https://datawebs.my.id/pasang-tahap6.php\` dan klik **Pasang Manajemen Pengguna**.
-6. Installer memeriksa format file autentikasi yang aktif, membuat dua tabel baru pada database SmartApp, menyimpan backup file PHP autentikasi di folder privat, dan mengaktifkan pengendalian akses portal.
+6. Installer memeriksa format file autentikasi yang aktif, membuat tiga tabel baru pada database SmartApp, menyimpan backup file PHP autentikasi di folder privat, dan mengaktifkan pengendalian akses portal.
 7. Setelah berhasil, buka \`https://datawebs.my.id/kelola-pengguna.php\`.
 8. Hapus \`public_html/pasang-tahap6.php\` serta ZIP dari hosting setelah pemasangan. Pertahankan \`portal_private/account_control.php\`, \`bootstrap.php\`, \`auth.php\` dan tabel baru.
 
@@ -22,7 +22,7 @@ Tahap 6 dipasang setelah Super Admin dan Direktori Akun aktif. Tujuannya: **meng
 - Izinkan atau blokir **akses login SmartCikoko** (tidak menghapus akun sumber).
 - Izin khusus modul: PPPK dan PJLP untuk akun Pegawai, PPPK untuk akun PPPK Pancoran, atau Ahli Waris untuk akun SmartApp.
 - Opsi \`Mengikuti Peran\`, \`Diizinkan\`, atau \`Ditolak\` untuk kemampuan yang tersedia.
-- Log audit kegiatan untuk tiap perubahan akses/izin.
+- Log audit kegiatan untuk tiap perubahan akses/izin dan halaman riwayat 15 perubahan terakhir.
 - Pemeriksaan ulang status dan role sumber serta izin portal pada sesi web aktif, login baru, dan pemakaian token API.
 
 ## 3. Batasan keamanan
@@ -65,7 +65,7 @@ Jangan menimpa secara manual \`bootstrap.php\` atau \`auth.php\` dari GitHub. In
         └── kelola-pengguna.css
 \`\`\`
 
-Dua tabel kontrol dibuat otomatis saat instalasi pertama:
+Tiga tabel kontrol dibuat otomatis saat instalasi pertama:
 - \`unified_account_access\`
 - \`unified_module_access\`
 
