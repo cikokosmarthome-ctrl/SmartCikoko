@@ -1,0 +1,87 @@
+name: Paket Tahap 10 Tindak Lanjut
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/citizen_requests.php'
+      - 'portal_private/citizen_followup.php'
+      - 'public_html/tindak-lanjut.php'
+      - 'public_html/unduh-pengajuan.php'
+      - 'public_html/bukti-pengajuan.php'
+      - 'public_html/instal-tindak-lanjut.php'
+      - 'public_html/api/index.php'
+      - 'public_html/pengajuan-warga.php'
+      - 'public_html/super-admin.php'
+      - 'public_html/assets/tindak-lanjut.css'
+      - 'public_html/assets/bukti-pengajuan.css'
+      - 'public_html/assets/instal-tindak-lanjut.css'
+      - 'tests/stage10-unit.php'
+      - '.github/workflows/pack-stage10.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage10-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,fileinfo
+          tools: none
+      - name: Pemeriksaan sintaks PHP
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in portal_private/citizen_requests.php portal_private/citizen_followup.php public_html/tindak-lanjut.php public_html/unduh-pengajuan.php public_html/bukti-pengajuan.php public_html/instal-tindak-lanjut.php public_html/api/index.php public_html/pengajuan-warga.php public_html/super-admin.php; do
+            php -l "$file"
+          done
+      - name: Uji fungsi tanpa database produksi
+        run: |
+          php tests/stage9-unit.php
+          php tests/stage10-unit.php
+      - name: Buat ZIP instalasi tambahan
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staging/portal_private staging/public_html/api staging/public_html/assets paket
+          cp portal_private/citizen_requests.php portal_private/citizen_followup.php staging/portal_private/
+          cp public_html/tindak-lanjut.php public_html/unduh-pengajuan.php public_html/bukti-pengajuan.php public_html/instal-tindak-lanjut.php public_html/pengajuan-warga.php public_html/super-admin.php staging/public_html/
+          cp public_html/api/index.php staging/public_html/api/
+          cp public_html/assets/tindak-lanjut.css public_html/assets/bukti-pengajuan.css public_html/assets/instal-tindak-lanjut.css staging/public_html/assets/
+          cat > staging/BACA-TAHAP10.txt <<'HELP'
+          SMARTCIKOKO - TAHAP 10 TINDAK LANJUT
+          1. Backup SmartApp dan file Tahap 9 yang akan diperbarui.
+          2. Upload ZIP ke /home/datd1747/ dan Extract pada direktori tersebut.
+          3. Login Super Administrator.
+          4. Buka https://datawebs.my.id/instal-tindak-lanjut.php
+          5. Klik Pasang Tahap 10.
+          6. Buka https://datawebs.my.id/tindak-lanjut.php
+          7. Uji menggunakan akun dan dokumen DUMMY, bukan dokumen warga nyata.
+          8. Hapus public_html/instal-tindak-lanjut.php dan ZIP dari hosting.
+          Tidak perlu SQL manual. Tidak mengubah arsip lama.
+          Dokumen cetak BUKAN SURAT RESMI.
+          HELP
+          (cd staging && zip -q -X -r ../paket/SmartCikoko-TAHAP10-TINDAKLANJUT.zip .)
+          unzip -t paket/SmartCikoko-TAHAP10-TINDAKLANJUT.zip
+      - name: Publikasikan ZIP ke GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP10-TINDAKLANJUT.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 10 cPanel ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP10-TINDAKLANJUT
+          path: paket/SmartCikoko-TAHAP10-TINDAKLANJUT.zip
+          retention-days: 30
