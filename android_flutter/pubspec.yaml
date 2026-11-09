@@ -1,0 +1,13 @@
+name: smartcikoko
+description: Portal Pelayanan dan Administrasi Terpadu Kelurahan Cikoko
+publish_to: none
+version: 1.0.0+1
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.3.0
+  flutter_secure_storage: ^9.2.4
+flutter:
+  uses-material-design: true
