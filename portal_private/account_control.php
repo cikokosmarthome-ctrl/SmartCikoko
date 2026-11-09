@@ -108,8 +108,13 @@ function control_set(array $super,string $source,string $id,string $action,strin
     if($source===$super['source'] && hash_equals($id,(string)$super['id']))throw new RuntimeException('Tidak dapat mengubah akun sendiri.');
     $pdo=db('smartapp');$pdo->beginTransaction();
     try {
+        $previous='default';
         if($action==='login') {
             if(!in_array($value,['active','blocked'],true))throw new InvalidArgumentException('Status akses tidak dikenal.');
+            $before=$pdo->prepare('SELECT login_allowed FROM unified_account_access WHERE actor_source=? AND actor_id=? FOR UPDATE');
+            $before->execute([$source,$id]);
+            $was=$before->fetchColumn();
+            $previous=$was===false?'active':((int)$was===1?'active':'blocked');
             // Do not reactivate a user already disabled in the legacy source.
             if($value==='active' && $target['status']!=='active') throw new RuntimeException('Akun sumber tidak aktif. Aktifkan dahulu melalui prosedur kepegawaian.');
             $q=$pdo->prepare('INSERT INTO unified_account_access(actor_source,actor_id,login_allowed,updated_by_source,updated_by_id,updated_at) VALUES(?,?,?,?,?,NOW()) ON DUPLICATE KEY UPDATE login_allowed=VALUES(login_allowed),updated_by_source=VALUES(updated_by_source),updated_by_id=VALUES(updated_by_id),updated_at=NOW()');
@@ -117,6 +122,10 @@ function control_set(array $super,string $source,string $id,string $action,strin
         }elseif($action==='permission') {
             if(!in_array($ability,control_available_abilities($source),true))throw new RuntimeException('Modul tersebut tidak dapat dikelola untuk sumber akun ini.');
             if(!in_array($value,['default','grant','deny'],true))throw new InvalidArgumentException('Pilihan kewenangan tidak valid.');
+            $before=$pdo->prepare('SELECT decision FROM unified_module_access WHERE actor_source=? AND actor_id=? AND ability=? FOR UPDATE');
+            $before->execute([$source,$id,$ability]);
+            $was=$before->fetchColumn();
+            $previous=$was===false?'default':(string)$was;
             if($value==='default') {
                 $q=$pdo->prepare('DELETE FROM unified_module_access WHERE actor_source=? AND actor_id=? AND ability=?');
                 $q->execute([$source,$id,$ability]);
@@ -125,8 +134,18 @@ function control_set(array $super,string $source,string $id,string $action,strin
                 $q->execute([$source,$id,$ability,$value,$super['source'],$super['id']]);
             }
         }else throw new InvalidArgumentException('Tindakan tidak diperbolehkan.');
+        if($previous!==$value){
+            $history=$pdo->prepare('INSERT INTO unified_access_history (actor_source,actor_id,action_type,ability,old_value,new_value,changed_by_source,changed_by_id,changed_at) VALUES (?,?,?,?,?,?,?,?,NOW())');
+            $history->execute([$source,$id,$action,$ability,$previous,$value,$super['source'],(string)$super['id']]);
+        }
         $log=$pdo->prepare('INSERT INTO unified_audit (actor_source,actor_id,event_type,entity,subject_hash,created_at) VALUES (?,?,?,?,?,NOW())');
         $log->execute([$super['source'],(string)$super['id'],$action==='login'?'account_access_updated':'module_permission_updated',$action==='login'?'unified_account_access':'unified_module_access',hash('sha256',$source.':'.$id.':'.$ability.':'.$value)]);
         $pdo->commit();
     }catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
+}
+
+function control_recent_changes(int $limit=15):array {
+    $limit=max(1,min(50,$limit));
+    $query=db('smartapp')->query("SELECT actor_source,actor_id,action_type,ability,old_value,new_value,changed_at FROM unified_access_history ORDER BY id DESC LIMIT ".$limit);
+    return $query->fetchAll(PDO::FETCH_ASSOC);
 }
