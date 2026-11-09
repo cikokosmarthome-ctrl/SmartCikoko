@@ -50,7 +50,8 @@ function is_super_admin(?array $candidate=null):bool {
     $f=__DIR__.'/security_stage13.php';
     if(!is_file($f))return true; // before Stage 13 is installed, preserve legacy access
     require_once $f;
-    if(!s13_installed() || !s13_enrolled($candidate))return true;
+    if(!s13_enrolled($candidate))return true;
+    if(!s13_installed())return false;
     // REST API tokens need their own second-factor attestation, never web session state.
     if(str_contains((string)($_SERVER['SCRIPT_NAME']??''),'/api/')){
         $auth=(string)($_SERVER['HTTP_AUTHORIZATION']??$_SERVER['REDIRECT_HTTP_AUTHORIZATION']??'');
