@@ -19,7 +19,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
    $identity=trim((string)($_POST['username']??''));
    throttle_login($identity);
    $matches=login_matches($identity,(string)($_POST['password']??''));
-   if(!$matches)throw new RuntimeException('Identitas akun atau kata sandi tidak sesuai.');
+   if(!$matches){log_event('login_failed','identity',$identity);throw new RuntimeException('Identitas akun atau kata sandi tidak sesuai.');}
    clear_login_limit($identity);
    if(count($matches)===1){start_actor_session($matches[0]);redirect('dashboard');}
    $_SESSION['pending_matches']=$matches;
