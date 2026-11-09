@@ -132,12 +132,14 @@ function t10_upload(array $actor,int $requestId,string $type,array $upload):void
 /** Download must authenticate user and authorize access to the parent request. */
 function t10_download(array $actor,int $fileId):never {
     if($fileId<1){http_response_code(400);exit('Nomor berkas tidak valid.');}
-    $q=db('smartapp')->prepare('SELECT request_id,original_name,stored_name,mime_type FROM unified_citizen_files WHERE id=?');
+    $q=db('smartapp')->prepare('SELECT request_id,original_name,stored_name,mime_type,file_size,sha256 FROM unified_citizen_files WHERE id=?');
     $q->execute([$fileId]);$file=$q->fetch(PDO::FETCH_ASSOC);
     if(!$file){http_response_code(404);exit('Berkas tidak ditemukan.');}
     t10_actor_case($actor,(int)$file['request_id']);
     if(!preg_match('/^[a-f0-9]{48}\.(pdf|jpg|png)$/D',(string)$file['stored_name']))
         throw new RuntimeException('Berkas tidak valid.');
+    require_once __DIR__.'/archive_security.php';
+    t11_require_intact('pengajuan',$file);
     $path=t10_storage().'/'.$file['stored_name'];
     if(!is_file($path)||is_link($path)){http_response_code(404);exit('Berkas tidak ditemukan.');}
     $name=preg_replace('/[^A-Za-z0-9._-]/','_', (string)$file['original_name'])?:'lampiran';
