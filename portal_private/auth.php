@@ -75,9 +75,8 @@ function api_actor(): ?array {
     if(is_file($security) && in_array($result['source'],['pegawai','smartapp'],true)
        && in_array($result['role'],['admin','superadmin','admin_kelurahan'],true)){
         require_once $security;
-        if(is_file(__DIR__.'/mfa_key.php') && !s13_installed())return null;
-        if(s13_installed() && s13_enrolled($result)
-           && !s13_api_attested($result,strtolower($m[1])))return null;
+        if(s13_enrolled($result)
+           && (!s13_installed() || !s13_api_attested($result,strtolower($m[1]))))return null;
     }
     return $result;
 }
