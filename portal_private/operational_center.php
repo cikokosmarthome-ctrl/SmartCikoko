@@ -82,7 +82,7 @@ function operational_list(string $key,string $search='',int $page=1): array {
     return ['total'=>$total,'page'=>$page,'max_page'=>$maxPage,'rows'=>$rows];
 }
 function operational_exists(string $key,string $id):bool {
-    if(!in_array($key,['pppk','pjlp'],true)||!ctype_digit($id)||strlen($id)>20)return false;
+    if(!in_array($key,['pppk','pjlp'],true)||!preg_match('/^[A-Za-z0-9_-]{1,100}$/D',$id))return false;
     $m=operational_context($key);
     // Column and table from fixed server-controlled map, not input.
     $q=db('pegawai')->prepare('SELECT 1 FROM '.$m['table'].' WHERE '.$m['pk'].'=? LIMIT 1');
