@@ -84,9 +84,18 @@ if(PHP_SAPI!=='cli' && basename((string)($_SERVER['SCRIPT_NAME']??''))!=='mfa.ph
    && actor()!==null && is_file(__DIR__.'/security_stage13.php')){
     require_once __DIR__.'/security_stage13.php';
     $s13Actor=actor();
-    if(is_super_admin_identity($s13Actor) && s13_installed()
-       && s13_enrolled($s13Actor) && !s13_verified_session($s13Actor)){
-        header('Cache-Control: private, no-store');
-        header('Location: /mfa.php',true,303);exit;
+    if(is_super_admin_identity($s13Actor)){
+        try{
+            if(s13_enrolled($s13Actor)){
+                if(!s13_installed()){http_response_code(503);exit('Keamanan MFA belum tersedia. Hubungi pengelola.');}
+                if(!s13_verified_session($s13Actor)){
+                    header('Cache-Control: private, no-store');
+                    header('Location: /mfa.php',true,303);exit;
+                }
+            }
+        }catch(Throwable $e){
+            error_log('Stage 13 MFA gate unavailable.');
+            http_response_code(503);exit('Akses akun memerlukan verifikasi keamanan.');
+        }
     }
 }
