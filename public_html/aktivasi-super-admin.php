@@ -178,16 +178,7 @@ if(!$done && ($_SERVER['REQUEST_METHOD']??'GET')==='POST') {
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#103e68">
 <title>Aktivasi Super Administrator | Kelurahan Cikoko</title>
-<style>
-*{box-sizing:border-box}body{background:#f3f7fb;margin:0;color:#193b58;font:15px/1.6 "Segoe UI",Arial,sans-serif}.wrap{max-width:680px;padding:24px;margin:65px auto}
-header{background:linear-gradient(110deg,#0b2e50,#175888);padding:29px;border-radius:16px 16px 0 0;color:white}
-header small{font-size:11px;font-weight:800;letter-spacing:1.6px;color:#efc277}
-header h1{font-size:27px;line-height:1.25;margin:10px 0}header p{margin:0;color:#dae9f3}
-main{padding:30px;background:white;border:1px solid #dbe6f0;border-top:0;border-radius:0 0 16px 16px;box-shadow:0 16px 50px #163e6015}
-h2{font-size:18px;color:#0e385b;margin:4px 0 13px}p{margin:8px 0 14px}.person{display:flex;gap:12px;align-items:center;padding:16px;background:#eaf3fb;border-radius:9px;margin-bottom:23px}
-.person b{display:block}.person small{color:#6385a2}.step{display:flex;gap:12px;margin:22px 0}.number{width:28px;height:28px;display:grid;place-items:center;flex:0 0 auto;border-radius:50%;background:#15598e;color:white;font-weight:800}.step div{flex:1}.path{display:block;margin:10px 0;padding:11px;background:#edf3f9;border-radius:7px;color:#174b75;font:12px/1.55 ui-monospace,monospace;overflow-wrap:anywhere}
-label{font-weight:700;display:block;margin:20px 0 8px}.code{display:block;width:100%;border:1px solid #b7cddd;border-radius:9px;padding:14px;font:14px ui-monospace,monospace;letter-spacing:1px}.btn{display:inline-flex;align-items:center;justify-content:center;border:0;background:#155b8d;color:#fff;padding:13px 20px;border-radius:8px;font-weight:800;cursor:pointer}.alert{padding:14px 17px;border-radius:8px;margin:13px 0}.error{background:#fff0f1;color:#9a3b44}.done{background:#ebf9ef;color:#156f3e}footer{font-size:12px;color:#7790a4;text-align:center;padding-top:20px}
-</style></head>
+<link rel="stylesheet" href="/assets/aktivasi-super-admin.css"></head>
 <body><div class="wrap"><header>
 <small>PORTAL TERPADU KELURAHAN CIKOKO</small>
 <h1>Aktivasi Super Administrator</h1>
