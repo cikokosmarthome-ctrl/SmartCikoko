@@ -143,7 +143,7 @@ class _LoginState extends State<Login>{
      if(r['selection_required']==true){
        if(mounted)setState(()=>choices=r['accounts'] as List? ?? []);
      }else{
-       password.clear();await widget.onLogin(r['token'].toString());
+       password.clear();widget.onLogin(r['token'].toString());
      }
    }catch(e){if(mounted)setState(()=>error=e.toString());}
    if(mounted)setState(()=>busy=false);
