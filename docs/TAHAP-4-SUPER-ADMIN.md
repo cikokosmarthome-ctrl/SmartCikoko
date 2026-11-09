@@ -96,4 +96,4 @@ Tabel yang dibuat: \`unified_module_progress\`, dengan 7 modul dan progres awal 
 - Mengakses data melalui modul lama sesuai kewenangan administrator.
 
 ### Pembatasan jujur
-Panel ini bukan mesin yang secara otomatis menjalankan semua tugas atau fitur CRUD semua modul. Pengelolaan data tetap dilakukan melalui modul masing-masing; fungsi baru tersebut perlu dibangun dan diuji bertahap. Aplikasi Android membutuhkan rilis kode baru dan pengujian keamanan sebelum fitur Super Admin digunakan di sana.
+Panel ini bukan mesin yang secara otomatis menjalankan semua tugas atau fitur CRUD semua modul. Pengelolaan data tetap dilakukan melalui modul masing-masing; fungsi baru tersebut perlu dibangun dan diuji bertahap. API menambahkan layanan `superadmin_dashboard` hanya untuk akun Super Admin, dan aplikasi Android mempunyai ringkasan baca-saja status serta progres. **Pengubahan progres hanya lewat website** agar lebih mudah diaudit. Aplikasi Android masih membutuhkan build, uji perangkat dan rilis baru sebelum fitur tersebut tersedia pada aplikasi terpasang.
