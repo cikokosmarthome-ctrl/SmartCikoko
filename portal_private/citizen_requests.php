@@ -18,8 +18,15 @@ function t9_relationships():array{return [
 function t9_actor(?array $user):?array {
     if(!$user || !in_array((string)($user['source']??''),['smartapp','pegawai','pancoran'],true))return null;
     if(!function_exists('account_control_allowed'))require_once __DIR__.'/account_control.php';
-    try{return account_control_allowed($user)?$user:null;}
-    catch(Throwable $e){error_log('Tahap 9: pemeriksaan akun gagal.');return null;}
+    try{
+        if(!account_control_allowed($user))return null;
+        // Explicit Stage-6 "deny" for the waris module must also apply to
+        // the Stage-9/10 citizen workflows. Do not bypass module restrictions.
+        if($user['source']==='smartapp' &&
+           in_array((string)$user['role'],['warga','ptsp','lurah'],true) &&
+           account_control_permission_decision($user,'waris')===false)return null;
+        return $user;
+    }catch(Throwable $e){error_log('Tahap 9: pemeriksaan akun gagal.');return null;}
 }
 function t9_is_citizen(?array $u):bool {
     return $u!==null && $u['source']==='smartapp' && $u['role']==='warga';
