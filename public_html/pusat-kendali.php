@@ -146,7 +146,7 @@ $auditLast7Days=$ready['smartapp']?summary_number('smartapp','SELECT COUNT(*) FR
       <?php foreach($statusValues as $key=>$count):?>
         <div class="bar-row">
           <div class="bar-top"><span><?=h(ucfirst($key))?></span><strong><?=val($count)?></strong></div>
-          <div class="track"><span style="width:<?=ratio($count,$allWaris)?>%"></span></div>
+          <div class="track"><progress value="<?=max(0,(int)($count??0))?>" max="<?=max(1,(int)($allWaris??0))?>" aria-label="Proporsi status <?=h($key)?>"></progress></div>
         </div>
       <?php endforeach;?>
       <p class="explain">Grafik berdasarkan jumlah permohonan pada tabel pengajuan ahli waris. Tidak menampilkan identitas pemohon.</p>
