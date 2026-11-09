@@ -55,7 +55,7 @@ function status_label(string $s):string{return match($s) {
 <div class="topline"><div class="wrap"><span>PEMERINTAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA</span><span>KECAMATAN PANCORAN · JAKARTA SELATAN</span></div></div>
 <header class="nav"><div class="wrap nav-inner">
   <a class="brand" href="/"><span class="monogram">KC</span><span><strong>KELURAHAN CIKOKO</strong><small>Portal Pelayanan dan Administrasi Terpadu</small></span></a>
-  <div class="navlinks"><a href="/">Beranda</a><a href="/?page=dashboard">Ruang Kerja</a><a class="selected" href="/super-admin.php">Pusat Super Admin</a><a href="/direktori-akun.php">Direktori Akun</a><a href="/?page=profil">Profil</a></div>
+  <div class="navlinks"><a href="/">Beranda</a><a href="/?page=dashboard">Ruang Kerja</a><a class="selected" href="/super-admin.php">Pusat Super Admin</a><a href="/direktori-akun.php">Direktori Akun</a><a href="/kelola-pengguna.php">Manajemen Pengguna</a><a href="/?page=profil">Profil</a></div>
 </div></header>
 <main>
 <section class="hero"><div class="wrap hero-inner"><div>
@@ -77,7 +77,7 @@ function status_label(string $s):string{return match($s) {
 <div class="metric"><small><?=h($metric['title'])?></small><strong><?=fmt($metric['value'])?></strong><span><?=h($metric['source']==='pegawai'?'Database Kepegawaian':'Database Pelayanan')?></span></div>
 <?php endforeach;?>
 </div>
-<div class="accounts-shortcut"><div><strong>Kelola Identitas dan Hak Akses Secara Bertahap</strong><p>Periksa akun aktif pada masing-masing sumber dari satu direktori. Pengubahan peran tetap dikunci sampai fitur administrasi aman tersedia.</p></div><a class="btn outline" href="/direktori-akun.php">Buka Direktori Akun →</a></div>
+<div class="accounts-shortcut"><div><strong>Manajemen Pengguna Terpadu</strong><p>Periksa akun, atur akses login, dan tentukan izin modul sesuai kewenangan. Perubahan tercatat dalam audit sistem.</p></div><a class="btn outline" href="/kelola-pengguna.php">Kelola Pengguna →</a></div>
 </section>
 <section class="progress-section" aria-labelledby="progress-title">
 <div class="section-head"><div><span class="eyebrow">PEMANTAUAN PEKERJAAN</span><h2 id="progress-title">Progres Seluruh Modul</h2><p>Persentase merupakan laporan pekerjaan yang diisi Super Admin, bukan penilaian otomatis.</p></div></div>
