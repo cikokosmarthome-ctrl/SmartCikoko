@@ -38,9 +38,28 @@ try {
     if($resource==='me'&&$method==='GET')respond(['ok'=>true,'user'=>$u,'permissions'=>[
         'admin'=>is_admin($u),'pegawai'=>is_admin($u),
         'pppk'=>permitted('pppk',$u),'pjlp'=>permitted('pjlp',$u),
-        'waris'=>permitted('waris',$u),'waris_manage'=>permitted('waris_manage',$u)
+        'waris'=>permitted('waris',$u),'waris_manage'=>permitted('waris_manage',$u),
+        'super_admin'=>is_super_admin($u)
     ]]);
     if($resource==='dashboard'&&$method==='GET')respond(['ok'=>true,'data'=>dashboard_data($u)]);
+    if($resource==='superadmin_dashboard'&&$method==='GET'){
+        if(!is_super_admin($u))respond(['ok'=>false,'error'=>'Akses Super Admin ditolak.'],403);
+        $items=[];
+        $progress=super_admin_progress();
+        foreach(super_admin_modules() as $key=>$meta){
+            $p=$progress[$key]??null;
+            $items[]=[
+                'key'=>$key,'label'=>$meta['label'],'status'=>$p['status']??'belum',
+                'progress_percent'=>(int)($p['progress_percent']??0),
+                'notes'=>$p['notes']??'','configured'=>$p!==null
+            ];
+        }
+        respond(['ok'=>true,'data'=>[
+            'health'=>super_admin_metrics(),
+            'modules'=>$items,
+            'progress_configured'=>count($progress)===count(super_admin_modules())
+        ]]);
+    }
     if($resource==='pegawai'&&$method==='GET'){
         if(!is_admin($u))respond(['ok'=>false,'error'=>'Akses ditolak.'],403);
         respond(['ok'=>true,'data'=>employee_list($u)]);
