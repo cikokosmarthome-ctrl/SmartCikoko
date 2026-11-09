@@ -1,0 +1,80 @@
+name: Paket Tahap 12 Kesiapan Produksi
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/release_readiness.php'
+      - 'public_html/kesiapan-produksi.php'
+      - 'public_html/instal-kesiapan.php'
+      - 'public_html/assets/kesiapan-produksi.css'
+      - 'public_html/assets/instal-kesiapan.css'
+      - 'public_html/super-admin.php'
+      - 'tests/stage12-readiness.php'
+      - '.github/workflows/pack-stage12.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage12-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql
+          tools: none
+      - name: Validasi sintaks PHP
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l portal_private/release_readiness.php
+          php -l public_html/kesiapan-produksi.php
+          php -l public_html/instal-kesiapan.php
+          php -l public_html/super-admin.php
+      - name: Uji diagnosa murni tanpa database
+        run: php tests/stage12-readiness.php
+      - name: Buat ZIP instalasi cPanel tanpa data rahasia
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staging/portal_private staging/public_html/assets paket
+          cp portal_private/release_readiness.php staging/portal_private/
+          cp public_html/kesiapan-produksi.php public_html/instal-kesiapan.php public_html/super-admin.php staging/public_html/
+          cp public_html/assets/kesiapan-produksi.css public_html/assets/instal-kesiapan.css staging/public_html/assets/
+          cat > staging/BACA-TAHAP12.txt <<'HELP'
+          SMARTCIKOKO TAHAP 12 - KESIAPAN PRODUKSI
+          1. Backup database SmartApp dan public_html/super-admin.php.
+          2. Upload ZIP di /home/datd1747/ lewat cPanel lalu Extract.
+          3. Login sebagai Super Administrator.
+          4. Buka https://datawebs.my.id/instal-kesiapan.php
+          5. Klik Pasang Tahap 12.
+          6. Buka https://datawebs.my.id/kesiapan-produksi.php
+          7. Periksa diagnostik dan checklist dengan bukti nyata.
+          8. Hapus public_html/instal-kesiapan.php dan ZIP dari hosting.
+          Jangan gunakan data warga nyata untuk pengujian sebelum keamanan dinilai.
+          TIDAK perlu membuka phpMyAdmin ataupun impor ulang SQL.
+          Checklist 100 persen BUKAN izin operasional atau sertifikasi keamanan.
+          HELP
+          (cd staging && zip -q -X -r ../paket/SmartCikoko-TAHAP12-KESIAPAN.zip .)
+          unzip -t paket/SmartCikoko-TAHAP12-KESIAPAN.zip
+      - name: Simpan ZIP di repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP12-KESIAPAN.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 12 cPanel package"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP12-KESIAPAN
+          path: paket/SmartCikoko-TAHAP12-KESIAPAN.zip
+          retention-days: 30
