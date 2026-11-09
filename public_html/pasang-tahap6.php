@@ -73,7 +73,21 @@ function schema_stage6():void {
         updated_at DATETIME NOT NULL,
         PRIMARY KEY(actor_source,actor_id,ability)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-    foreach(['unified_account_access','unified_module_access'] as $table){
+    $pdo->exec("CREATE TABLE IF NOT EXISTS unified_access_history (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        actor_source ENUM('pegawai','pancoran','smartapp') NOT NULL,
+        actor_id VARCHAR(100) NOT NULL,
+        action_type ENUM('login','permission') NOT NULL,
+        ability VARCHAR(32) NOT NULL DEFAULT '',
+        old_value VARCHAR(16) NOT NULL,
+        new_value VARCHAR(16) NOT NULL,
+        changed_by_source VARCHAR(30) NOT NULL,
+        changed_by_id VARCHAR(100) NOT NULL,
+        changed_at DATETIME NOT NULL,
+        KEY idx_history_timestamp (changed_at),
+        KEY idx_history_target (actor_source,actor_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    foreach(['unified_account_access','unified_module_access','unified_access_history'] as $table){
         $pdo->query('SELECT COUNT(*) FROM '.$table.' LIMIT 1')->fetchColumn();
     }
 }
