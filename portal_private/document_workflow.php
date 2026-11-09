@@ -128,6 +128,11 @@ function t8_upload(array $actor,int $appId,string $type,array $upload):void {
     $original=trim((string)($upload['name']??'berkas'));
     $original=mb_substr(preg_replace('/[^\pL\pN ._-]/u','_',basename(str_replace('\\','/',$original)))??'berkas',0,120);
     if($original==='')$original='berkas.'.$allowed[$mime];
+    $t13File=__DIR__.'/security_stage13.php';
+    if(is_file($t13File)){
+        require_once $t13File;
+        s13_scan_upload_if_configured($tmp);
+    }
     $stored=bin2hex(random_bytes(24)).'.'.$allowed[$mime];
     $path=t8_storage_dir().'/'.$stored;
     if(!move_uploaded_file($tmp,$path))throw new RuntimeException('Berkas gagal disimpan.');
