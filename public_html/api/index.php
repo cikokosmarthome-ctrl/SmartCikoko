@@ -35,6 +35,42 @@ try {
     }
     $u=api_actor();
     if(!$u)respond(['ok'=>false,'error'=>'Sesi tidak valid atau telah berakhir.'],401);
+    if(str_starts_with($resource,'citizen_')){
+        require_once dirname(__DIR__,2).'/portal_private/citizen_requests.php';
+        $citizen=t9_actor($u);
+        if(!$citizen)respond(['ok'=>false,'error'=>'Sesi atau hak akses akun tidak valid.'],401);
+        try{
+            if($resource==='citizen_list'&&$method==='GET')
+                respond(['ok'=>true,'data'=>t9_list($citizen,max(1,(int)($_GET['page']??1)))]);
+            if($resource==='citizen_detail'&&$method==='GET'){
+                $id=(int)($_GET['id']??0);
+                $case=t9_case($citizen,$id);
+                if(!$case)respond(['ok'=>false,'error'=>'Permohonan tidak ditemukan.'],404);
+                unset($case['account_id']);
+                respond(['ok'=>true,'data'=>['case'=>$case,'history'=>t9_history($citizen,$id)]]);
+            }
+            if($resource==='citizen_create'&&$method==='POST'){
+                $id=t9_create($citizen,trim((string)($body['deceased_name']??'')),(string)($body['relationship']??''),trim((string)($body['purpose']??'')),(string)($body['request_key']??''));
+                respond(['ok'=>true,'id'=>$id],201);
+            }
+            if($resource==='citizen_edit'&&$method==='POST'){
+                t9_edit($citizen,(int)($body['id']??0),(int)($body['version']??0),trim((string)($body['deceased_name']??'')),(string)($body['relationship']??''),trim((string)($body['purpose']??'')));
+                respond(['ok'=>true,'message'=>'Draf permohonan diperbarui.']);
+            }
+            if($resource==='citizen_transition'&&$method==='POST'){
+                t9_transition($citizen,(int)($body['id']??0),(int)($body['version']??0),(string)($body['to_status']??''),trim((string)($body['note']??'')));
+                respond(['ok'=>true,'message'=>'Tahapan permohonan berhasil diperbarui.']);
+            }
+            respond(['ok'=>false,'error'=>'Layanan pengajuan tidak ditemukan.'],404);
+        }catch(PDOException $e){
+            error_log('SmartCikoko citizen API database unavailable: '.$e->getMessage());
+            respond(['ok'=>false,'error'=>'Layanan sedang mengalami kendala.'],503);
+        }catch(InvalidArgumentException|RuntimeException $e){
+            // Never expose database metadata in API error messages.
+            error_log('SmartCikoko citizen API rejected request: '.$e->getMessage());
+            respond(['ok'=>false,'error'=>'Permintaan tidak dapat diproses. Periksa status dan kelengkapan data.'],422);
+        }
+    }
     if($resource==='me'&&$method==='GET')respond(['ok'=>true,'user'=>$u,'permissions'=>[
         'admin'=>is_admin($u),'pegawai'=>is_admin($u),
         'pppk'=>permitted('pppk',$u),'pjlp'=>permitted('pjlp',$u),
