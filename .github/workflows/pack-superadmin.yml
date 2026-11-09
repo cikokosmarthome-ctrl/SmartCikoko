@@ -1,0 +1,70 @@
+name: Buat Paket Aktivasi Super Admin
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public_html/aktivasi-super-admin.php'
+      - 'public_html/assets/aktivasi-super-admin.css'
+      - 'public_html/super-admin.php'
+      - 'public_html/assets/super-admin.css'
+      - 'portal_private/super_admin.php'
+      - '.github/workflows/pack-superadmin.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paket-super-admin
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Siapkan file instalasi hanya untuk Super Admin
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p paket staging/public_html/assets staging/portal_private
+          cp public_html/aktivasi-super-admin.php staging/public_html/
+          cp public_html/super-admin.php staging/public_html/
+          cp public_html/assets/aktivasi-super-admin.css staging/public_html/assets/
+          cp public_html/assets/super-admin.css staging/public_html/assets/
+          cp portal_private/super_admin.php staging/portal_private/
+          cat > staging/BACA-DAHULU.txt <<'HELP'
+          SMARTCIKOKO - AKTIVASI SUPER ADMIN
+          1. Backup file sistem sebelumnya.
+          2. Upload ZIP ini ke /home/datd1747/ di cPanel Rumahweb dan Extract.
+          3. Login sebagai Administrator yang ingin dijadikan Super Admin.
+          4. Buka https://datawebs.my.id/aktivasi-super-admin.php
+          5. Lihat kode pada /home/datd1747/portal_private/KODE-SUPERADMIN.txt
+          6. Tempel kode, klik Aktifkan Akun Saya.
+          7. Setelah sukses, HAPUS public_html/aktivasi-super-admin.php
+             dan HAPUS arsip ZIP dari hosting.
+          Tidak perlu mengedit SQL, ID akun, atau config.php secara manual.
+          Detail: docs/AKTIVASI-SUPERADMIN-TANPA-SQL.md di GitHub.
+          HELP
+          (cd staging && zip -q -X -r ../paket/SmartCikoko-AKTIVASI-SUPERADMIN.zip .)
+          unzip -t paket/SmartCikoko-AKTIVASI-SUPERADMIN.zip
+      - name: Publikasikan paket aman di repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add paket/SmartCikoko-AKTIVASI-SUPERADMIN.zip
+          if git diff --cached --quiet; then
+            echo "Paket sudah sama dengan versi GitHub."
+          else
+            git commit -m "Update paket instalasi Super Admin satu klik"
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-AKTIVASI-SUPERADMIN
+          path: paket/SmartCikoko-AKTIVASI-SUPERADMIN.zip
+          retention-days: 30
