@@ -1,0 +1,81 @@
+name: Paket Tahap 9 Pengajuan dan Persetujuan
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/citizen_requests.php'
+      - 'public_html/pengajuan-warga.php'
+      - 'public_html/instal-pengajuan.php'
+      - 'public_html/api/index.php'
+      - 'public_html/super-admin.php'
+      - 'public_html/assets/pengajuan-warga.css'
+      - 'public_html/assets/instal-pengajuan.css'
+      - 'tests/stage9-unit.php'
+      - '.github/workflows/pack-stage9.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage9-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_mysql, fileinfo
+          tools: none
+      - name: Periksa sintaks PHP Tahap 9
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in portal_private/citizen_requests.php public_html/pengajuan-warga.php public_html/instal-pengajuan.php public_html/api/index.php public_html/super-admin.php; do
+            php -l "$file"
+          done
+      - name: Validasi peran dan formulir
+        run: php tests/stage9-unit.php
+      - name: Bentuk paket instalasi Rumahweb
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staging/portal_private staging/public_html/api staging/public_html/assets paket
+          cp portal_private/citizen_requests.php staging/portal_private/
+          cp public_html/pengajuan-warga.php public_html/instal-pengajuan.php public_html/super-admin.php staging/public_html/
+          cp public_html/api/index.php staging/public_html/api/
+          cp public_html/assets/pengajuan-warga.css public_html/assets/instal-pengajuan.css staging/public_html/assets/
+          cat > staging/PETUNJUK-TAHAP9.txt <<'HELP'
+          SMARTCIKOKO TAHAP 9 - PENGAJUAN MASYARAKAT
+          1. Backup database SmartApp dan file public_html/super-admin.php serta public_html/api/index.php.
+          2. Upload ZIP ke /home/datd1747/ dan Extract di direktori tersebut.
+          3. Login sebagai Super Administrator.
+          4. Buka https://datawebs.my.id/instal-pengajuan.php
+          5. Klik "Pasang Tahap 9".
+          6. Uji lewat https://datawebs.my.id/pengajuan-warga.php
+          7. Uji pemohon Warga, petugas PTSP, dan Lurah menggunakan akun uji.
+          8. Hapus public_html/instal-pengajuan.php serta ZIP dari hosting.
+          TIDAK PERLU IMPOR ULANG SQL.
+          Data dari tabel aw_applications lama tidak diganti.
+          Kode Flutter terpisah ada di android_flutter dalam GitHub.
+          HELP
+          (cd staging && zip -q -X -r ../paket/SmartCikoko-TAHAP9-PENGAJUAN.zip .)
+          unzip -t paket/SmartCikoko-TAHAP9-PENGAJUAN.zip
+      - name: Publikasikan ZIP di GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP9-PENGAJUAN.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 9 cPanel ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP9-PENGAJUAN
+          path: paket/SmartCikoko-TAHAP9-PENGAJUAN.zip
+          retention-days: 30
