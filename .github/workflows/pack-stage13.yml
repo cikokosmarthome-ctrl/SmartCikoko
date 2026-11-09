@@ -1,0 +1,116 @@
+name: Paket Tahap 13 Keamanan Super Admin
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/security_stage13.php'
+      - 'portal_private/bootstrap.php'
+      - 'portal_private/auth.php'
+      - 'portal_private/super_admin.php'
+      - 'portal_private/document_workflow.php'
+      - 'portal_private/citizen_followup.php'
+      - 'public_html/mfa.php'
+      - 'public_html/keamanan-superadmin.php'
+      - 'public_html/instal-keamanan13.php'
+      - 'public_html/assets/mfa.css'
+      - 'public_html/assets/keamanan13.css'
+      - 'public_html/index.php'
+      - 'public_html/api/index.php'
+      - 'tests/stage13-totp.php'
+      - '.github/workflows/pack-stage13.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage13-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_mysql, openssl, fileinfo
+          tools: none
+      - name: PHP lint for all modified entrypoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/security_stage13.php portal_private/bootstrap.php portal_private/auth.php portal_private/super_admin.php portal_private/document_workflow.php portal_private/citizen_followup.php public_html/mfa.php public_html/keamanan-superadmin.php public_html/instal-keamanan13.php public_html/index.php public_html/api/index.php; do
+            php -l "$f"
+          done
+      - name: TOTP RFC vectors and replay tests
+        run: php tests/stage13-totp.php
+      - name: Split preparation and activation ZIPs
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage13_preparation stage13_activation
+          mkdir -p stage13_preparation/portal_private stage13_preparation/public_html/assets
+          mkdir -p stage13_activation/portal_private stage13_activation/public_html/api paket
+          cp portal_private/security_stage13.php stage13_preparation/portal_private/
+          cp public_html/mfa.php public_html/keamanan-superadmin.php public_html/instal-keamanan13.php stage13_preparation/public_html/
+          cp public_html/assets/mfa.css public_html/assets/keamanan13.css stage13_preparation/public_html/assets/
+          cat > stage13_preparation/BACA-TAHAP13-PERSIAPAN.txt <<'HELP'
+          TAHAP 13 - PERSIAPAN AMAN (TIDAK MENIMPA FILE INTI)
+          1. Backup kedua database dan file website.
+          2. Upload ZIP ini ke /home/datd1747/ dan Extract.
+          3. Login Super Admin, buka https://datawebs.my.id/instal-keamanan13.php
+          4. Klik Pasang Tahap 13 untuk menambah tabel dan kunci server privat.
+          5. JANGAN MENDAFTARKAN MFA sebelum memasang ZIP aktivasi!
+          6. Backup lagi file inti sesuai panduan dokumen Tahap 13.
+          7. Lanjutkan paket TAHAP13-AKTIVASI setelah menguji kompatibilitas.
+          HELP
+          cp portal_private/bootstrap.php portal_private/auth.php portal_private/super_admin.php portal_private/document_workflow.php portal_private/citizen_followup.php stage13_activation/portal_private/
+          cp public_html/index.php stage13_activation/public_html/
+          cp public_html/api/index.php stage13_activation/public_html/api/
+          cat > stage13_activation/BACA-TAHAP13-AKTIVASI.txt <<'HELP'
+          TAHAP 13 - AKTIVASI MFA (MENIMPA FILE INTI)
+          JANGAN INSTALL TANPA BACKUP DAN UJI KESESUAIAN FILE LIVE!
+          Persiapan Tahap 13 harus sudah selesai.
+          1. Backup portal_private/bootstrap.php, auth.php, super_admin.php,
+             document_workflow.php, citizen_followup.php, public_html/index.php,
+             dan public_html/api/index.php.
+          2. Pastikan domain memakai PHP 8.3/8.4, dan kode live sesuai GitHub.
+          3. Upload dan Extract ZIP ini ke /home/datd1747/.
+          4. Uji login akun biasa dan Super Admin sebelum enrollment MFA.
+          5. Buka https://datawebs.my.id/mfa.php, verifikasi password, aktifkan TOTP.
+          6. Simpan delapan kode cadangan di luar web server.
+          7. Uji kode MFA di web dan aplikasi Android.
+          8. Cek https://datawebs.my.id/keamanan-superadmin.php
+          9. Hapus public_html/instal-keamanan13.php dan ZIP setelah selesai.
+          JANGAN HAPUS portal_private/mfa_key.php setelah enrollment MFA.
+          HELP
+          rm -f paket/SmartCikoko-TAHAP13-PERSIAPAN.zip paket/SmartCikoko-TAHAP13-AKTIVASI.zip
+          (cd stage13_preparation && zip -q -X -r ../paket/SmartCikoko-TAHAP13-PERSIAPAN.zip .)
+          (cd stage13_activation && zip -q -X -r ../paket/SmartCikoko-TAHAP13-AKTIVASI.zip .)
+          unzip -t paket/SmartCikoko-TAHAP13-PERSIAPAN.zip
+          unzip -t paket/SmartCikoko-TAHAP13-AKTIVASI.zip
+          if unzip -Z1 paket/SmartCikoko-TAHAP13-PERSIAPAN.zip | grep -Eq '(^|/)(bootstrap|auth|index|super_admin)\.php$'; then
+            echo 'Preparation package must not include existing core files'
+            exit 1
+          fi
+          for f in portal_private/security_stage13.php public_html/mfa.php public_html/keamanan-superadmin.php public_html/instal-keamanan13.php; do
+            unzip -Z1 paket/SmartCikoko-TAHAP13-PERSIAPAN.zip | grep -Fxq "$f"
+          done
+      - name: Publish both ZIP archives to repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP13-PERSIAPAN.zip paket/SmartCikoko-TAHAP13-AKTIVASI.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 13 preparation and activation ZIPs"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP13-PAKET
+          path: |
+            paket/SmartCikoko-TAHAP13-PERSIAPAN.zip
+            paket/SmartCikoko-TAHAP13-AKTIVASI.zip
+          retention-days: 30
