@@ -5,7 +5,7 @@
 1. Ciptakan database `datd1747_Pegawai` serta `datd1747_smartapp` dan user masing-masing lewat MySQL Databases di cPanel. Verifikasi penamaan aktual.
 2. Impor SQL asli (file pegawai ke Pegawai, file smartapp ke SmartApp) lewat phpMyAdmin. Jangan mengunggah file SQL atau data pribadi ke GitHub atau public_html.
 3. Jalankan `portal_private/schema.sql` di database SmartApp. Perintah ini hanya membuat tabel integrasi baru.
-4. Upload isi `public_html/` ke `/home/datd1747/public_html/` dan folder `portal_private/` ke `/home/datd1747/portal_private/`, di luar webroot.
+4. Upload isi `public_html/` ke `/home/datd1747/public_html/`, folder `portal_private/` ke `/home/datd1747/portal_private/`, serta folder `tools/` ke `/home/datd1747/tools/`. Kedua folder terakhir harus berada di luar webroot.
 5. Salin `portal_private/config.example.php` menjadi `portal_private/config.php`. Ganti kredensial placeholder dengan kata sandi database BARU dan TERPISAH. Password yang pernah dibagikan harus diganti.
 6. Dua berkas akun website lama, `data/portal_users.json` (17 akun) dan `data/admin.json` (akun administrator) di ZIP website lama, perlu dimigrasi ke `unified_portal_users` memakai `tools/import_accounts.php`. Jalankan hanya lewat PHP CLI dengan berkas JSON di luar webroot; jangan masukkan JSON ke GitHub. Hapus berkas sementara setelah proses selesai.
 7. Uji `https://datawebs.my.id/api/?resource=health`; verifikasi HTTPS, login dari dua sumber, pilihan akun ganda, menu berdasar peran, pengajuan ahli waris, PPPK/PJLP, dan pembatasan akses.
