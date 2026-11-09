@@ -56,7 +56,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add paket/SmartCikoko-AKTIVASI-SUPERADMIN.zip
+          git add -f paket/SmartCikoko-AKTIVASI-SUPERADMIN.zip
           if git diff --cached --quiet; then
             echo "Paket sudah sama dengan versi GitHub."
           else
