@@ -82,13 +82,12 @@ assert 'a(\'pjlp\'' in index
 assert 'a(\'waris\'' in index
 assert 'login_matches' in index
 assert 'waris_change_status' in index
-assert '/assets/site-public-v3.css?v=20261110v3' in index
+assert '/assets/portal-mockup.css?v=20261110a' in index
 assert 'aria-labelledby="home-title"' in index
-assert 'class="hero-panel-head"' in index
-assert 'class="hero-quick-grid"' in index
-assert index.count('class="hero-quick-link"')==4
-assert 'class="outline">CIKOKO' not in index
-assert '<span class="seal">KC</span>' in index
+assert 'class="hero-art"' in index
+assert 'cikoko-office-illustration.svg' in index
+assert 'class="portal-services"' in index
+assert '<span class="seal" aria-hidden="true">KC</span>' in index
 
 public_theme=(ROOT/'assets/site-public-v3.css').read_text()
 assert '--site-navy' in public_theme
@@ -101,6 +100,17 @@ assert 'body.sc-page-index .hero .btn.primary' in public_theme
 assert 'body.sc-page-index .service' in public_theme
 assert 'body.sc-page-index > footer.footer' in public_theme
 assert public_theme.count('{')==public_theme.count('}')
+
+modern_theme=(ROOT/'assets/portal-mockup.css').read_text()
+assert 'body.sc-page-index .hero-art' in modern_theme
+assert 'body.sc-page-index .portal-services' in modern_theme
+assert 'body.sc-page-index .gov-inner' in modern_theme
+assert 'body.sc-page-index .header nav' in modern_theme
+assert 'body.sc-page-index > footer' in modern_theme
+assert modern_theme.count('{')==modern_theme.count('}')
+assert 'api/mobile-forms.php' in relative
+assert 'assets/cikoko-office-illustration.svg' in relative
+
 
 form=(ROOT/'formulir-pegawai16.php').read_text()
 assert 'f16_create($user' in form
