@@ -229,6 +229,10 @@ def modernize_html(src: str, relative: Path) -> str:
     )
     if n != 1:
         raise ValueError(f"{relative}: expected exactly one body tag")
+    # The public source file carries the same stylesheet for emergency V4 hotfixes.
+    # Remove that early copy and load the theme once, AFTER ui-modern.css.
+    if page == "index":
+        src = src.replace(PUBLIC_THEME, "")
     link = THEME + "\n" + (PUBLIC_THEME + "\n" if page == "index" else "") + SHELL
     if page == "super-admin-satu":
         link += "\n" + ADMIN_SCRIPT
@@ -259,6 +263,9 @@ def modernize_html(src: str, relative: Path) -> str:
 
 def make_body(attrs: str, page: str) -> str:
     expected = f"sc-body sc-page-{page}"
+    # Source HTML can already carry the shared body class.
+    if expected in attrs:
+        return "<body" + attrs + ">"
     if re.search(r'\bclass\s*=\s*["\']', attrs, flags=re.I):
         attrs = re.sub(
             r'(?i)\bclass\s*=\s*(["\'])(.*?)\1',
