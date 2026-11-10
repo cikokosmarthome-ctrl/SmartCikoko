@@ -19,7 +19,10 @@ try{
 $path=__DIR__.'/super-admin-satu.php';
 $current=is_file($path)&&!is_link($path)?@file_get_contents($path):false;
 $panelReady=is_string($current)&&w17_dashboard_ready($current);
-$ready=w17_ready();$error='';$notice='';
+$centerPath=__DIR__.'/pusat-laporan.php';
+$centerCurrent=is_file($centerPath)&&!is_link($centerPath)?@file_get_contents($centerPath):false;
+$centerReady=is_string($centerCurrent)&&w17_center_ready($centerCurrent);
+$ready=w17_ready();$error='';$notice='';$linkProblem='';
 if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
     verify_csrf();
     try{
@@ -67,7 +70,19 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
             $current=@file_get_contents($path);
             $panelReady=is_string($current)&&w17_dashboard_ready($current);
         }
-        if(!$notice)$notice='Penyimpanan dan panel ringkas sudah siap.';
+        // Optional navigation from the existing Stage-15 staff intake page.
+        // A mismatch never damages or blocks the new reporting module.
+        if(!$centerReady && is_string($centerCurrent)){
+            try{
+                w17_center_apply($centerPath,dirname(__DIR__).'/portal_private',(string)($_POST['center_sha']??''));
+                $centerCurrent=@file_get_contents($centerPath);
+                $centerReady=is_string($centerCurrent)&&w17_center_ready($centerCurrent);
+            }catch(Throwable $e){
+                error_log('Stage 17 optional staff-center menu not linked: '.get_class($e));
+                $linkProblem='Tautan di halaman Pusat Input Laporan belum tersambung otomatis. Formulir Tahap 17 tetap dapat dibuka melalui alamat langsung.';
+            }
+        }
+        if(!$notice)$notice='Penyimpanan dan panel Super Admin sudah siap.';
     }catch(Throwable $e){
         error_log('Stage 17 installer failed: '.get_class($e));
         // Avoid leaking SQL syntax, account IDs and server file paths to browser.
@@ -89,6 +104,8 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
 <h2>Status Pemasangan</h2>
 <p>Database input laporan tambahan: <strong><?=$ready?'Siap':'Belum dipasang'?></strong></p>
 <p>Panel Super Admin Ringkas: <strong><?=$panelReady?'Terhubung':'Belum tersambung'?></strong></p>
+<p>Menu Pusat Input Laporan: <strong><?=$centerReady?'Terhubung':'Opsional · belum tersambung'?></strong></p>
+<?php if($linkProblem):?><div class="alert error"><?=h($linkProblem)?></div><?php endif;?>
 <?php if($ready&&$panelReady):?>
 <div class="alert good">Tahap 17 sudah terpasang secara struktural. Lanjutkan pengujian dengan akun dummy yang sesuai peran.</div>
 <a class="button" href="/super-admin-satu.php#laporan-wilayah">Buka Super Admin Ringkas →</a>
@@ -102,6 +119,7 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
 <form method="post" action="/instal-wilayah17.php">
 <input type="hidden" name="csrf" value="<?=h(csrf())?>">
 <input type="hidden" name="dashboard_sha" value="<?=h(hash('sha256',$current))?>">
+<input type="hidden" name="center_sha" value="<?=is_string($centerCurrent)?h(hash('sha256',$centerCurrent)):''?>">
 <button class="button" type="submit">Pasang & Sambungkan ke Super Admin →</button></form>
 <?php endif;?>
 <?php endif;?>
