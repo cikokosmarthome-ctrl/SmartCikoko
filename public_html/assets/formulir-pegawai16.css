@@ -19,6 +19,7 @@
 .panel{border-radius:9px;padding:15px 17px;margin-bottom:12px}
 .panel-top{margin-bottom:8px;gap:9px}
 .panel h2{font-size:18px;margin:0;color:#123f63}
+.panel h1.form-main-title{font-size:18px;line-height:1.35;font-weight:800;margin:0;color:#123f63}
 .eyebrow{display:none}
 .chip{font-size:10px;padding:4px 9px}
 .scope{border:1px solid #e5edf3;border-radius:7px;background:#fafcff;margin-bottom:10px}
