@@ -187,6 +187,7 @@ function w17_list(array $actor,string $kind='',int $page=1,int $per=12):array {
     $isManager=is_super_admin($actor);
     $where=[];$params=[];
     if(!$isManager){$where[]='actor_source=? AND actor_id=?';$params[]=$actor['source'];$params[]=(string)$actor['id'];}
+    else{$where[]="status<>'draf'";} // Draf pribadi belum boleh dipantau sebelum dikirim.
     if($kind!==''){$where[]='kind=?';$params[]=$kind;}
     $filter=$where?' WHERE '.implode(' AND ',$where):'';
     $db=db('smartapp');$q=$db->prepare('SELECT COUNT(*) FROM unified_field_reports17'.$filter);$q->execute($params);
