@@ -3,9 +3,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'portal_private/hub23.php'
+      # Stage23 V2 recovery is immutable/pinned; current hub changes are
+      # validated by Stage24, not rechecked as historical V2 replacements.
       - 'portal_private/hub23_repair.php'
-      - 'public_html/pusat-operasional23.php'
       - 'public_html/perbaiki-operasional23.php'
       - 'tests/stage23-recovery.php'
       - '.github/workflows/pack-stage23-recovery.yml'
