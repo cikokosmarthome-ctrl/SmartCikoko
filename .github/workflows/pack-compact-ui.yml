@@ -113,7 +113,7 @@ jobs:
               'BACA-TAMPILAN-COMPACT.txt',
           }
           with zipfile.ZipFile(name) as z:
-              actual=set(z.namelist())
+              actual={name for name in z.namelist() if not name.endswith('/')}
               assert actual==expected, actual.symmetric_difference(expected)
           print('ZIP contains only 5 operator UI files and a readme')
           PY
