@@ -20,6 +20,10 @@ jobs:
         run: |
           set -eu
           find public_html portal_private tools -type f -name '*.php' -print0 | xargs -0 -n 1 php -l
+      - name: Uji matriks akses Cikoko Smart dan API laporan
+        run: |
+          php tests/cikoko-smart-catalog.php
+          php tests/mobile-forms-api.php
   flutter:
     name: Periksa kode Flutter
     runs-on: ubuntu-latest
@@ -33,4 +37,6 @@ jobs:
         run: flutter pub get
       - name: Analisis Flutter
         working-directory: android_flutter
-        run: flutter analyze
+        run: |
+          flutter analyze
+          flutter test
