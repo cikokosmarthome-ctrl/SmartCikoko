@@ -86,7 +86,7 @@ assert '/assets/portal-mockup.css?v=20261110a' in index
 assert 'aria-labelledby="home-title"' in index
 assert 'class="hero-art"' in index
 assert 'cikoko-office-illustration.svg' in index
-assert 'class="portal-services"' in index
+assert 'class="cards portal-services"' in index
 assert '<span class="seal" aria-hidden="true">KC</span>' in index
 
 public_theme=(ROOT/'assets/site-public-v3.css').read_text()
