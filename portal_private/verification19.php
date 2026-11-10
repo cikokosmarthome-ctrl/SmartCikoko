@@ -162,7 +162,7 @@ function v19_queue(array $actor,string $source='',int $limit=40):array{
         $sql='SELECT r.id,r.'.$spec['category'].' AS category,r.status,r.version,r.actor_source,r.actor_id,r.created_at,'
             .'v.state,v.report_version,v.reviewer_source,v.reviewer_id,v.review_note,v.lurah_source,v.lurah_id,v.lurah_note'
             .' FROM '.$spec['table'].' r LEFT JOIN unified_verification19 v ON v.source_kind=? AND v.source_id=r.id'
-            ." WHERE r.status IN ('diajukan','ditinjau') ORDER BY r.id DESC LIMIT 150";
+            ." WHERE r.status IN ('diajukan','ditinjau','perbaikan') ORDER BY r.id DESC LIMIT 150";
         try{
             $q=$db->prepare($sql);$q->execute([$key]);
             foreach($q->fetchAll(PDO::FETCH_ASSOC) as $row){
