@@ -171,7 +171,7 @@ class _FormEditorPageState extends State<FormEditorPage> {
     final ctrl=inputs[field]!;
     if(type=='select'){
       return DropdownButtonFormField<String>(
-        value:ctrl.text.isEmpty?null:ctrl.text,
+        initialValue:ctrl.text.isEmpty?null:ctrl.text,
         isExpanded:true,decoration:InputDecoration(labelText:title),
         items:opts.entries.map((e)=>DropdownMenuItem(value:e.key,child:Text(e.value.toString()))).toList(),
         onChanged:editable?(v)=>setState(()=>ctrl.text=v??''):null,
