@@ -1,0 +1,97 @@
+name: Paket Tahap 16 Formulir Pegawai Terstruktur
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/detailed_forms16.php'
+      - 'public_html/formulir-pegawai16.php'
+      - 'public_html/instal-formulir16.php'
+      - 'public_html/assets/formulir-pegawai16.css'
+      - 'tests/stage16-forms.php'
+      - '.github/workflows/pack-stage16.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage16-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,fileinfo
+          tools: none
+      - name: PHP lint
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/detailed_forms16.php public_html/formulir-pegawai16.php public_html/instal-formulir16.php; do
+            php -l "$f"
+          done
+      - name: Role and legacy-form validation tests
+        run: php tests/stage16-forms.php
+      - name: CSS structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          css=Path('public_html/assets/formulir-pegawai16.css').read_text()
+          assert css.count('{')==css.count('}')
+          assert '@media' in css
+          assert '.record-body' in css
+          print('CSS stage16 structurally valid')
+          PY
+      - name: Build non-destructive cPanel ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage16_pkg
+          mkdir -p stage16_pkg/portal_private stage16_pkg/public_html/assets paket
+          cp portal_private/detailed_forms16.php stage16_pkg/portal_private/
+          cp public_html/formulir-pegawai16.php public_html/instal-formulir16.php stage16_pkg/public_html/
+          cp public_html/assets/formulir-pegawai16.css stage16_pkg/public_html/assets/
+          cat > stage16_pkg/BACA-TAHAP16.txt <<'HELP'
+          SMARTCIKOKO TAHAP 16 - FORMULIR PEGAWAI TERSTRUKTUR
+          Backup kedua database, situs dan kunci MFA.
+          Upload ZIP di /home/datd1747/ lalu Extract pada direktori itu.
+          Login Super Admin dengan MFA.
+          Buka https://datawebs.my.id/instal-formulir16.php
+          Klik Pasang Tahap 16. Tidak perlu SQL manual.
+          Buka https://datawebs.my.id/formulir-pegawai16.php
+          Uji dengan akun dummy PPPK, PJLP, ASN sesuai peran.
+          Hapus public_html/instal-formulir16.php dan ZIP setelah berhasil.
+          Form ini tidak mengubah data cuti, saldo atau laporan resmi Pegawai.
+          Tidak menimpa index.php, auth.php, bootstrap.php atau MFA.
+          HELP
+          rm -f paket/SmartCikoko-TAHAP16-FORMULIR-PEGAWAI.zip
+          (cd stage16_pkg && zip -q -X -r ../paket/SmartCikoko-TAHAP16-FORMULIR-PEGAWAI.zip .)
+          unzip -t paket/SmartCikoko-TAHAP16-FORMULIR-PEGAWAI.zip
+          for f in portal_private/detailed_forms16.php public_html/formulir-pegawai16.php public_html/instal-formulir16.php public_html/assets/formulir-pegawai16.css; do
+            unzip -Z1 paket/SmartCikoko-TAHAP16-FORMULIR-PEGAWAI.zip | grep -Fxq "$f"
+          done
+          if unzip -Z1 paket/SmartCikoko-TAHAP16-FORMULIR-PEGAWAI.zip | grep -Eq '(^|/)(index|bootstrap|auth|config|super_admin|mfa|super-admin|super-admin-satu)\.php$'; then
+            echo 'Unsafe existing login or admin PHP in package'
+            exit 1
+          fi
+      - name: Publish package to GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP16-FORMULIR-PEGAWAI.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 16 detailed staff forms ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP16-FORMULIR-PEGAWAI
+          path: paket/SmartCikoko-TAHAP16-FORMULIR-PEGAWAI.zip
+          retention-days: 30
