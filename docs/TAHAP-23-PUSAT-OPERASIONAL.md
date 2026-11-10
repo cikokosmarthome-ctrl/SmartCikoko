@@ -43,7 +43,7 @@ Alamat setelah ZIP diekstrak dan dipasang:
 2. Pastikan paket Tahap 15–22 telah diekstrak dan modul yang dibutuhkan sudah dapat dibuka. Jika belum, tahap 23 dapat menunjukkan status belum siap, namun tidak bisa menggantikannya.
 3. Download paket **`paket/SmartCikoko-TAHAP23-PUSAT-OPERASIONAL.zip`** dari GitHub.
 4. Masuk **cPanel → File Manager → `/home/datd1747/`**.
-5. Upload ZIP dan **Extract pada direktori itu**, bukan di dalam public_html. Paket **hanya berisi 4 file baru**: `portal_private/hub23.php`, `portal_private/hub23_patch.php`, `public_html/pusat-operasional23.php`, `public_html/instal-operasional23.php`, ditambah `public_html/assets/pusat-operasional23.css` dan petunjuk.
+5. Upload ZIP dan **Extract pada direktori itu**, bukan di dalam public_html. Paket **hanya berisi 5 file baru**: `portal_private/hub23.php`, `portal_private/hub23_patch.php`, `public_html/pusat-operasional23.php`, `public_html/instal-operasional23.php`, ditambah `public_html/assets/pusat-operasional23.css` dan petunjuk.
 6. Paket tidak menimpa `index.php`, `super-admin-satu.php`, `pusat-laporan.php`, `auth.php`, `bootstrap.php`, `mfa.php`, `verification19.php` atau skrip perlindungan Tahap 22.
 7. Login Super Admin memakai Google Authenticator lalu buka **https://datawebs.my.id/instal-operasional23.php**.
 8. Klik **Hubungkan Pusat Operasional**. Installer menambah satu tautan di menu Super Admin Ringkas dan satu tautan di menu Pusat Laporan, dengan validasi **SHA-256 file asli**. Backup sebelum perubahan dibuat di **`portal_private/hub23_backups/`**, di luar public_html. Jika layout file hosting sudah berubah, installer menolak penyisipan agar tidak merusak tampilan.
