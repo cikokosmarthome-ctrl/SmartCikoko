@@ -1,0 +1,126 @@
+name: Paket Tahap 22 Kendali Verifikasi
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/review22.php'
+      - 'portal_private/review22_patch.php'
+      - 'portal_private/review22_admin_panel.php'
+      - 'public_html/kendali-verifikasi22.php'
+      - 'public_html/pengganti-saya22.php'
+      - 'public_html/instal-review22.php'
+      - 'public_html/assets/review22.css'
+      - 'public_html/assets/review22-admin.css'
+      - 'tests/stage22-review.php'
+      - '.github/workflows/pack-stage22.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage22-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql
+          tools: none
+      - name: PHP lint Stage22 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/review22.php portal_private/review22_patch.php portal_private/review22_admin_panel.php public_html/kendali-verifikasi22.php public_html/pengganti-saya22.php public_html/instal-review22.php; do
+            php -l "$f"
+          done
+      - name: Unit tests for assignment-only verification, deputy expiry and backup
+        run: php tests/stage22-review.php
+      - name: Lint patched real Stage19 authorization and one-page Super Admin
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -r 'require "portal_private/review22_patch.php"; file_put_contents("/tmp/stage22-verification.php",r22_patch(file_get_contents("portal_private/verification19.php"),"verification")); file_put_contents("/tmp/stage22-admin.php",r22_patch(file_get_contents("public_html/super-admin-satu.php"),"dashboard")); file_put_contents("/tmp/stage22-center.php",r22_patch(file_get_contents("public_html/pusat-laporan.php"),"center"));'
+          php -l /tmp/stage22-verification.php
+          php -l /tmp/stage22-admin.php
+          php -l /tmp/stage22-center.php
+      - name: Check default-off policies, guard presence and responsive CSS
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          for f in ['public_html/assets/review22.css','public_html/assets/review22-admin.css']:
+              src=Path(f).read_text()
+              assert src.count('{')==src.count('}'),f
+              assert '@media' in src,f
+          i=Path('public_html/instal-review22.php').read_text()
+          p=Path('portal_private/review22.php').read_text()
+          patch=Path('portal_private/review22_patch.php').read_text()
+          assert 'enforced TINYINT(1) NOT NULL DEFAULT 0' in i
+          assert 'SMARTCIKOKO_TAHAP22_STRICT_GUARD' in p
+          assert 'r22_gate(' in patch and 'r22_can_view(' in patch
+          assert 'r22_set_policy' in p and 't21_assignment_valid' in p
+          assert 'v19_reviewer' in Path('portal_private/verification19.php').read_text()
+          assert 'unified_review_events22' in p and 'unified_audit' in p
+          assert 'r22_deputy_tasks' in p
+          print('Stage22 default off, data isolation and audit guards passed')
+          PY
+      - name: Build minimal new-files-only cPanel ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage22_pkg
+          mkdir -p stage22_pkg/portal_private stage22_pkg/public_html/assets paket
+          cp portal_private/review22.php portal_private/review22_patch.php portal_private/review22_admin_panel.php stage22_pkg/portal_private/
+          cp public_html/kendali-verifikasi22.php public_html/pengganti-saya22.php public_html/instal-review22.php stage22_pkg/public_html/
+          cp public_html/assets/review22.css public_html/assets/review22-admin.css stage22_pkg/public_html/assets/
+          cat > stage22_pkg/BACA-TAHAP22.txt <<'HELP'
+          SMARTCIKOKO TAHAP 22 - KENDALI VERIFIKASI DAN CADANGAN
+          1. Backup website, kedua database, config dan kunci MFA.
+          2. Pastikan Tahap 15,16,17,19,20 dan 21 terpasang.
+          3. Upload ZIP ke /home/datd1747/ kemudian Extract di situ.
+          4. Login Super Admin dengan Google Authenticator.
+          5. Buka https://datawebs.my.id/instal-review22.php
+          6. Klik Pasang Kendali Verifikasi Tahap 22.
+          7. Installer mencadangkan Tahap19/private dan Super Admin asli
+             ke portal_private/review22_backups sebelum menyisipkan hook.
+          8. Kendali: https://datawebs.my.id/kendali-verifikasi22.php
+          9. Dashboard: https://datawebs.my.id/super-admin-satu.php#kendali-verifikasi
+          10. Cadangan: https://datawebs.my.id/pengganti-saya22.php
+          11. Semua mode KETAT default NONAKTIF, aktifkan PER kategori.
+          12. Uji akun dummy: pengusul, pemeriksa, Lurah dan pengganti.
+          13. Setelah berhasil hapus installer dan ZIP dari hosting.
+          Jangan hilangkan backup privat atau audit.
+          Mode ketat tidak sama dengan persetujuan resmi dan tidak
+          memberi Super Admin hak menyamar sebagai Lurah.
+          HELP
+          rm -f paket/SmartCikoko-TAHAP22-KENDALI-VERIFIKASI.zip
+          (cd stage22_pkg && zip -q -X -r ../paket/SmartCikoko-TAHAP22-KENDALI-VERIFIKASI.zip .)
+          unzip -t paket/SmartCikoko-TAHAP22-KENDALI-VERIFIKASI.zip
+          for f in portal_private/review22.php portal_private/review22_patch.php portal_private/review22_admin_panel.php public_html/kendali-verifikasi22.php public_html/pengganti-saya22.php public_html/instal-review22.php public_html/assets/review22.css public_html/assets/review22-admin.css; do
+            unzip -Z1 paket/SmartCikoko-TAHAP22-KENDALI-VERIFIKASI.zip | grep -Fxq "$f"
+          done
+          if unzip -Z1 paket/SmartCikoko-TAHAP22-KENDALI-VERIFIKASI.zip | grep -Eq '(^|/)(index|bootstrap|auth|config|super_admin|mfa|super-admin-satu|pusat-laporan|verification19|tasks21)\.php$'; then
+            echo 'ERROR: old PHP, auth, Stage19 or dashboard file inside additive ZIP'
+            exit 1
+          fi
+      - name: Publish tested ZIP to GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP22-KENDALI-VERIFIKASI.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 22 assignment-guarded verification ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP22-KENDALI-VERIFIKASI
+          path: paket/SmartCikoko-TAHAP22-KENDALI-VERIFIKASI.zip
+          retention-days: 30
