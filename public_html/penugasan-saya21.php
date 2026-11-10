@@ -22,6 +22,8 @@ $messages=[];
 try{$messages=t21_inbox($user,40);}
 catch(Throwable $e){error_log('Stage21 inbox not available.');$error='Kotak tugas belum dapat ditampilkan.';}
 $unread=count(array_filter($messages,static fn($r)=>$r['read_at']===null));
+$assignments=['rows'=>[],'incomplete'=>false];
+try{$assignments=t21_my_tasks($user,35);}catch(Throwable $e){error_log('Stage21 staff queue unavailable.');}
 ?>
 <!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0b3454">
@@ -33,7 +35,16 @@ $unread=count(array_filter($messages,static fn($r)=>$r['read_at']===null));
 <main class="wrap content">
 <?php if($notice):?><div class="notice good"><?=h($notice)?></div><?php endif;?>
 <?php if($error):?><div class="notice bad"><?=h($error)?></div><?php endif;?>
-<section class="panel"><div class="section-head"><div><h2>Tugas Aktif Saya</h2><p class="hint">Penugasan yang telah selesai, dialihkan atau tidak sesuai versi terkini tidak ditampilkan.</p></div><span class="pill"><?=$unread?> belum dibaca</span></div>
+<section class="panel"><div class="section-head"><div><h2>Laporan yang Ditugaskan kepada Saya</h2><p class="hint">Menampilkan laporan yang masih menunggu tindakan Anda, termasuk yang belum melewati ambang tenggat.</p></div><span class="pill"><?=count($assignments['rows'])?> tugas</span></div>
+<?php if(!$assignments['rows']):?><div class="empty">Belum ada laporan aktif pada kategori yang ditugaskan kepada akun ini.</div><?php endif;?>
+<?php foreach($assignments['rows'] as $task):?>
+<div class="inbox-row"><div><b><?=h(m20_sources()[$task['source']]['label']??$task['source'])?> · #<?=(int)$task['id']?> · <?=h($task['category'])?></b>
+<small><?=h(t21_steps()[$task['step']]??$task['step'])?> · <?=(int)$task['age']?> hari · ambang <?=(int)$task['due_days']?> hari <?=$task['overdue']?'· Perlu perhatian':'· Dalam tenggat internal'?></small>
+<a class="link" href="/verifikasi-laporan19.php?modul=<?=h(rawurlencode($task['source']))?>&amp;id=<?=(int)$task['id']?>">Buka pemeriksaan →</a></div></div>
+<?php endforeach;?>
+<?php if($assignments['incomplete']):?><p class="notice warning">Daftar dibatasi pada 100 laporan aktif per kategori dan 35 tugas terbaru. Gunakan halaman verifikasi untuk laporan lain.</p><?php endif;?>
+</section>
+<section class="panel"><div class="section-head"><div><h2>Pengingat Tugas Saya</h2><p class="hint">Penugasan yang telah selesai, dialihkan atau tidak sesuai versi terkini tidak ditampilkan.</p></div><span class="pill"><?=$unread?> belum dibaca</span></div>
 <?php if(!$messages):?><div class="empty">Belum ada pengingat aktif untuk akun ini. Penugasan mungkin belum diaktifkan atau tenggat belum tercapai.</div><?php endif;?>
 <div class="inbox">
 <?php foreach($messages as $item):?>
