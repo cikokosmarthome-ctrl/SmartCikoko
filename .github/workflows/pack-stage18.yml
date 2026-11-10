@@ -1,0 +1,122 @@
+name: Paket Tahap 18 Bukti Foto & Rekap
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/evidence18.php'
+      - 'portal_private/recap18.php'
+      - 'portal_private/evidence18_admin_panel.php'
+      - 'portal_private/evidence18_patch.php'
+      - 'public_html/bukti-laporan18.php'
+      - 'public_html/unduh-bukti18.php'
+      - 'public_html/rekap-laporan18.php'
+      - 'public_html/instal-bukti18.php'
+      - 'public_html/assets/bukti18.css'
+      - 'public_html/assets/evidence18-admin.css'
+      - 'tests/stage18-evidence.php'
+      - '.github/workflows/pack-stage18.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage18-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,fileinfo,gd
+          tools: none
+      - name: PHP lint — all Stage 18 scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/evidence18.php portal_private/recap18.php portal_private/evidence18_admin_panel.php portal_private/evidence18_patch.php public_html/bukti-laporan18.php public_html/unduh-bukti18.php public_html/rekap-laporan18.php public_html/instal-bukti18.php; do
+            php -l "$f"
+          done
+      - name: Validate scanner restrictions, owner isolation, CSV and private backups
+        run: php tests/stage18-evidence.php
+      - name: Verify actual one-page Super Admin and Pusat Input patch PHP
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -r 'require "portal_private/evidence18_patch.php"; file_put_contents("/tmp/e18-admin.php",e18_patch(file_get_contents("public_html/super-admin-satu.php"),"dashboard")); file_put_contents("/tmp/e18-center.php",e18_patch(file_get_contents("public_html/pusat-laporan.php"),"center"));'
+          php -l /tmp/e18-admin.php
+          php -l /tmp/e18-center.php
+      - name: CSS structure and sensitive-privacy design guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          for f in ['public_html/assets/bukti18.css','public_html/assets/evidence18-admin.css']:
+              css=Path(f).read_text()
+              assert css.count('{')==css.count('}'),f
+              assert '@media' in css,f
+          src=Path('portal_private/evidence18.php').read_text()
+          assert 's13_scan_upload_if_configured($tmp)' in src
+          assert 'imagecreatefromjpeg' in src and 'imagejpeg' in src
+          assert "'jumantik'" in src and "'pppk','pjlp'" in src
+          assert 'is_uploaded_file($tmp)' in src
+          assert 'hash_file' in src
+          print('Stage18 CSS and critical upload controls present')
+          PY
+      - name: Build minimal new-files-only cPanel ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage18_pkg
+          mkdir -p stage18_pkg/portal_private stage18_pkg/public_html/assets paket
+          cp portal_private/evidence18.php portal_private/recap18.php portal_private/evidence18_admin_panel.php portal_private/evidence18_patch.php stage18_pkg/portal_private/
+          cp public_html/bukti-laporan18.php public_html/unduh-bukti18.php public_html/rekap-laporan18.php public_html/instal-bukti18.php stage18_pkg/public_html/
+          cp public_html/assets/bukti18.css public_html/assets/evidence18-admin.css stage18_pkg/public_html/assets/
+          cat > stage18_pkg/BACA-TAHAP18.txt <<'HELP'
+          SMARTCIKOKO - TAHAP 18 BUKTI FOTO TERPROTEKSI DAN REKAP
+          1. Backup website, dua database, config privat, dan kunci MFA.
+          2. Upload ZIP di /home/datd1747/ dan Extract pada direktori itu.
+          3. Paket ini HANYA menambah file baru, tidak mengganti login.
+          4. Login Super Admin dengan Google Authenticator.
+          5. Buka https://datawebs.my.id/instal-bukti18.php
+          6. Klik Aktifkan Tahap 18 dan Hubungkan ke Dashboard.
+          7. Super Admin: https://datawebs.my.id/super-admin-satu.php#bukti-dan-rekap
+          8. Rekap: https://datawebs.my.id/rekap-laporan18.php
+          9. Bukti: https://datawebs.my.id/bukti-laporan18.php
+          10. Uji CSV dengan data dummy. Foto HANYA jika scanner ClamAV
+              enforce=true, socket aktif dan GD tersedia.
+          11. Setelah pengujian hapus public_html/instal-bukti18.php dan ZIP.
+          Installer menambah satu tabel unified_evidence18 di SmartApp.
+          Backup panel admin disimpan ke portal_private/evidence18_backups/.
+          Bukti disimpan ke portal_private/evidence18_storage/, bukan webroot.
+          Jangan unggah dokumen warga, KTP, cuti atau foto kesehatan.
+          HELP
+          rm -f paket/SmartCikoko-TAHAP18-BUKTI-REKAP.zip
+          (cd stage18_pkg && zip -q -X -r ../paket/SmartCikoko-TAHAP18-BUKTI-REKAP.zip .)
+          unzip -t paket/SmartCikoko-TAHAP18-BUKTI-REKAP.zip
+          for f in portal_private/evidence18.php portal_private/recap18.php portal_private/evidence18_admin_panel.php portal_private/evidence18_patch.php public_html/bukti-laporan18.php public_html/unduh-bukti18.php public_html/rekap-laporan18.php public_html/instal-bukti18.php public_html/assets/bukti18.css public_html/assets/evidence18-admin.css; do
+            unzip -Z1 paket/SmartCikoko-TAHAP18-BUKTI-REKAP.zip | grep -Fxq "$f"
+          done
+          if unzip -Z1 paket/SmartCikoko-TAHAP18-BUKTI-REKAP.zip | grep -Eq '(^|/)(index|bootstrap|auth|config|super_admin|mfa|super-admin-satu|pusat-laporan|security_stage13)\.php$'; then
+            echo 'ERROR: core login or existing UI file included in additive ZIP'
+            exit 1
+          fi
+      - name: Publish verified cPanel ZIP to repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP18-BUKTI-REKAP.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 18 protected evidence and recap ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP18-BUKTI-REKAP
+          path: paket/SmartCikoko-TAHAP18-BUKTI-REKAP.zip
+          retention-days: 30
