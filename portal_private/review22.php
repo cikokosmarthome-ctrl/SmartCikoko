@@ -91,6 +91,9 @@ function r22_event(PDO $db,array $admin,string $source,string $category,string $
 function r22_set_policy(array $admin,string $source,string $category,bool $on):void {
     r22_super($admin);t21_pair($source,$category,'pemeriksa');
     if($on){
+        $live=@file_get_contents(__DIR__.'/verification19.php');
+        if(!is_string($live)||!str_contains($live,'SMARTCIKOKO_TAHAP22_STRICT_GUARD'))
+            throw new RuntimeException('Pengaman verifikasi Tahap 19 belum tersambung. Kebijakan ketat tidak dapat diaktifkan.');
         foreach(['pemeriksa','lurah'] as $step){
             $assignment=r22_assignment($source,$category,$step);
             if(!$assignment||!t21_assignment_valid($assignment,date('Y-m-d')))
