@@ -209,11 +209,17 @@ function m20_remind(array $admin,string $source,int $id,int $version,string $exp
         $q->execute([$source]);$rule=$q->fetch(PDO::FETCH_ASSOC);
         if(!$rule||!m20_due($row,$rule,date('Y-m-d')))
             throw new RuntimeException('Laporan belum memenuhi batas pengingat aktif.');
-        $message='Pengingat tindak lanjut laporan '.$source.' #'.$id.'. Periksa status dan lengkapi tindakan sesuai kewenangan.';
+        // Without an authenticated assignment roster, do not assume who the
+        // reviewer/Lurah is. Send those overdue alerts to Super Admin's own
+        // inbox. Only correction requests go to the original reporter.
+        $recipientSource=$expectedPhase==='perbaikan'?(string)$row['actor_source']:(string)$admin['source'];
+        $recipientId=$expectedPhase==='perbaikan'?(string)$row['actor_id']:(string)$admin['id'];
+        $message=$expectedPhase==='perbaikan'
+            ?'Laporan '.$source.' #'.$id.' menunggu perbaikan Anda. Buka formulir sesuai kategori.'
+            :'Laporan '.$source.' #'.$id.' memerlukan pemantauan administratif oleh petugas yang berwenang.';
         $q=$db->prepare('INSERT IGNORE INTO unified_monitor_reminders20(source_kind,source_id,report_version,phase,recipient_source,recipient_id,sender_source,sender_id,message,created_at) VALUES(?,?,?,?,?,?,?,?,?,NOW())');
         $q->execute([$source,$id,$version,$expectedPhase,
-            (string)$row['actor_source'],(string)$row['actor_id'],
-            (string)$admin['source'],(string)$admin['id'],$message]);
+            $recipientSource,$recipientId,(string)$admin['source'],(string)$admin['id'],$message]);
         if($q->rowCount()!==1)
             throw new RuntimeException('Pengingat untuk status dan versi ini sudah pernah dikirim.');
         $newId=(int)$db->lastInsertId();
