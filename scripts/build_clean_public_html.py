@@ -194,7 +194,12 @@ def update_index(src: str) -> str:
         "if(permitted('pppk'))a('pppk','PPPK',$page);if(permitted('pjlp'))a('pjlp','PJLP',$page);\n"
         "if(permitted('waris'))a('waris','Ahli Waris',$page);a('profil','Akun',$page);}"
     )
-    return replace_once(src, old, new, "admin-only public navigation")
+    # Source homepage already has the compact role-aware header in V4.
+    if old in src:
+        return replace_once(src, old, new, "admin-only public navigation")
+    if 'if(function_exists(\'is_super_admin\')&&is_super_admin($u))' in src:
+        return src
+    raise ValueError("admin-only public navigation not recognized")
 
 
 def redirect_old_admin() -> str:
