@@ -77,7 +77,7 @@ function date_text(?string $s):string{return $s&&strtotime($s)?date('d M Y',strt
             if(permitted('pjlp',$u))a('pjlp','PJLP',$page);
             if(permitted('waris',$u))a('waris','Ahli Waris',$page);
         }
-        echo '<a href="/aktivitas-terpadu.php">Notifikasi &amp; Progres</a>';
+        echo '<a href="/cikoko-smart.php">Cikoko Smart</a><a href="/aktivitas-terpadu.php">Notifikasi &amp; Progres</a>';
         a('profil','Akun',$page);
     }else a('login','Masuk Portal',$page); ?>
   </nav>
