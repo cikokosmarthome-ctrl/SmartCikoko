@@ -56,15 +56,31 @@ function date_text(?string $s):string{return $s&&strtotime($s)?date('d M Y',strt
 <meta name="theme-color" content="#0a2949">
 <meta name="description" content="Portal informasi, pelayanan masyarakat dan administrasi terpadu Kelurahan Cikoko, Kecamatan Pancoran, Jakarta Selatan.">
 <title><?=h(ucwords(str_replace('-',' ',$page)))?> | Kelurahan Cikoko</title>
-<link rel="stylesheet" href="/assets/style.css"></head>
-<body>
-<div class="ribbon"><div class="container"><span>PEMERINTAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA</span><span>KECAMATAN PANCORAN · JAKARTA SELATAN</span></div></div>
-<header class="header"><div class="container headinner"><a class="brand" href="/"><span class="seal">KC</span><span><strong>KELURAHAN CIKOKO</strong><small>Portal Pelayanan dan Administrasi Terpadu</small></span></a>
-<nav><?php a('beranda','Beranda',$page);a('berita','Informasi',$page);a('agenda','Agenda',$page);
-if($u){a('dashboard','Ruang Kerja',$page);if(is_admin($u))a('pegawai','Pegawai',$page);
-if(permitted('pppk'))a('pppk','PPPK',$page);if(permitted('pjlp'))a('pjlp','PJLP',$page);
-if(permitted('waris'))a('waris','Ahli Waris',$page);a('profil','Akun',$page);}
-else a('login','Masuk Portal',$page);?></nav></div></header>
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/portal-mockup.css?v=20261110a"></head>
+<body class="sc-body sc-page-index">
+<div class="gov-ribbon"><div class="container gov-inner"><span>PEMERINTAH PROVINSI DKI JAKARTA</span><span>KECAMATAN PANCORAN · JAKARTA SELATAN</span></div></div>
+<header class="header modern-public-header">
+<div class="container headinner">
+  <a class="brand" href="/" aria-label="Kelurahan Cikoko - Beranda">
+    <span class="seal" aria-hidden="true">KC</span>
+    <span><strong>KELURAHAN CIKOKO</strong><small>Kecamatan Pancoran · Jakarta Selatan</small></span>
+  </a>
+  <nav aria-label="Navigasi publik">
+    <?php a('beranda','Beranda',$page);a('berita','Informasi',$page);a('agenda','Agenda',$page);
+    if($u){
+        if(function_exists('is_super_admin')&&is_super_admin($u)){
+            echo '<a href="/super-admin-satu.php">Admin</a>';
+        }else{
+            a('dashboard','Ruang Kerja',$page);
+            if(permitted('pppk',$u))a('pppk','PPPK',$page);
+            if(permitted('pjlp',$u))a('pjlp','PJLP',$page);
+            if(permitted('waris',$u))a('waris','Ahli Waris',$page);
+        }
+        a('profil','Akun',$page);
+    }else a('login','Masuk Portal',$page); ?>
+  </nav>
+</div></header>
 <?php if($notice):?><div class="container alert good"><?=h($notice)?></div><?php endif;?>
 <?php if($err):?><div class="container alert bad"><?=h($err)?></div><?php endif;?>
 <?php if($page==='beranda'):
@@ -73,48 +89,40 @@ try{$posts=public_posts(3);$events=public_events(3);}catch(Throwable $e){$posts=
 <section class="hero" aria-labelledby="home-title">
   <div class="container hero-grid">
     <div class="hero-copy">
-      <span class="eyebrow">PORTAL RESMI KELURAHAN CIKOKO</span>
-      <h1 id="home-title">Layanan publik yang <em>lebih mudah, cepat, dan terarah.</em></h1>
-      <p>Akses informasi kelurahan, pelayanan masyarakat, dan administrasi aparatur dari satu portal yang tertata.</p>
+      <span class="eyebrow">PORTAL LAYANAN DIGITAL KELURAHAN CIKOKO</span>
+      <h1 id="home-title">Pelayanan publik digital <em>Kelurahan Cikoko</em></h1>
+      <p>Informasi wilayah, pelayanan masyarakat, dan pelaporan aparatur yang lebih mudah diakses—aman, transparan, dan terintegrasi sesuai kewenangan.</p>
       <div class="buttons">
-        <a class="btn primary" href="<?=h(url($u?'dashboard':'login'))?>"><?= $u?'Buka Ruang Kerja':'Masuk Portal' ?> <span aria-hidden="true">↗</span></a>
-        <a class="btn secondary" href="#layanan">Jelajahi Layanan <span aria-hidden="true">↓</span></a>
+        <a class="btn primary" href="<?=h(url($u?'dashboard':'login'))?>"><span aria-hidden="true">➤</span> <?=$u?'Buka Ruang Kerja':'Ajukan Layanan Online'?></a>
+        <a class="btn secondary" href="#layanan">Jelajahi Layanan <span aria-hidden="true">→</span></a>
       </div>
-      <div class="hero-meta">
-        <span><i aria-hidden="true"></i> Portal informasi kelurahan</span>
-        <span><i aria-hidden="true"></i> Akses sesuai kewenangan</span>
-      </div>
+      <p class="hero-caption">Pelayanan · Informasi · Transparansi · Partisipasi</p>
     </div>
-    <aside class="hero-visual" aria-label="Pilihan layanan digital">
-      <div class="hero-panel-head">
-        <span class="hero-panel-logo" aria-hidden="true">KC</span>
-        <span><strong>SMARTCIKOKO</strong><small>Kelurahan Cikoko · Kecamatan Pancoran</small></span>
-        <span class="hero-panel-label">PORTAL DIGITAL</span>
-      </div>
-      <div class="hero-panel-intro"><span>AKSES CEPAT</span><h2>Layanan dalam satu tempat.</h2><p>Pilih kebutuhan Anda untuk memulai.</p></div>
-      <div class="hero-quick-grid">
-        <a href="<?=h(url($u?'dashboard':'login'))?>" class="hero-quick-link"><span class="quick-icon" aria-hidden="true">01</span><span><strong>Ruang Kerja</strong><small>Akses aparatur</small></span><span class="quick-arrow" aria-hidden="true">↗</span></a>
-        <a href="<?=h(url($u&&permitted('waris',$u)?'waris':($u?'dashboard':'login')))?>" class="hero-quick-link"><span class="quick-icon" aria-hidden="true">02</span><span><strong>Pelayanan Warga</strong><small>Administrasi layanan</small></span><span class="quick-arrow" aria-hidden="true">↗</span></a>
-        <a href="<?=h(url('berita'))?>" class="hero-quick-link"><span class="quick-icon" aria-hidden="true">03</span><span><strong>Informasi Publik</strong><small>Berita kelurahan</small></span><span class="quick-arrow" aria-hidden="true">↗</span></a>
-        <a href="<?=h(url('agenda'))?>" class="hero-quick-link"><span class="quick-icon" aria-hidden="true">04</span><span><strong>Agenda</strong><small>Kegiatan terkini</small></span><span class="quick-arrow" aria-hidden="true">↗</span></a>
-      </div>
-      <div class="hero-panel-foot"><span class="panel-dot" aria-hidden="true"></span> PORTAL PELAYANAN DAN INFORMASI TERPADU</div>
-    </aside>
+    <div class="hero-art" aria-label="Ilustrasi fasilitas pelayanan Kelurahan Cikoko">
+      <img src="/assets/cikoko-office-illustration.svg" alt="Ilustrasi kantor layanan pemerintah dengan bendera Merah Putih, bukan foto lokasi sebenarnya" width="900" height="590" loading="eager">
+      <div class="hero-art-note"><strong>SMARTCIKOKO</strong><span>Portal Digital Pelayanan Kelurahan</span></div>
+    </div>
   </div>
 </section>
-<section id="layanan" class="container section"><div class="section-top"><span class="eyebrow dark">LAYANAN UNGGULAN</span><h2>Satu portal, berbagai kemudahan pelayanan</h2><p>Informasi bagi masyarakat dan ruang kerja digital bagi aparatur kelurahan.</p></div>
-<div class="cards">
+<section id="layanan" class="container section services-section"><div class="section-top"><span class="eyebrow dark">AKSES CEPAT</span><h2>Layanan Kelurahan Cikoko</h2><p>Pilih layanan sesuai kebutuhan dan hak akses akun Anda.</p></div>
+<div class="cards portal-services">
 <?php foreach([
- ['◈','Pelayanan Ahli Waris','Penelusuran dan pemantauan permohonan ahli waris.','waris'],
- ['▤','Administrasi Kepegawaian','Pengelolaan pegawai dan administrasi internal.','dashboard'],
- ['◎','Pelaporan PPPK','Laporan kinerja PPPK sesuai peran dan kewenangan.','pppk'],
- ['▣','Kegiatan PJLP / PPSU','Informasi tugas dan rekap kegiatan petugas lapangan.','pjlp'],
- ['◇','Informasi Publik','Berita dan informasi resmi Kelurahan Cikoko.','berita'],
- ['◷','Agenda Kegiatan','Agenda layanan dan kegiatan kelurahan.','agenda']
-] as $service):?><a class="service" href="<?=h(url($service[3]))?>"><div class="service-icon"><?=h($service[0])?></div><strong><?=h($service[1])?></strong><p><?=h($service[2])?></p><span>Lihat Layanan ↗</span></a><?php endforeach;?></div></section>
-<section class="soft"><div class="container section"><div class="section-top"><span class="eyebrow dark">PUBLIKASI</span><h2>Informasi dan Agenda Terkini</h2></div>
-<div class="cards"><?php foreach($posts as $p):?><a class="service" href="<?=h(url('berita'))?>"><span class="tag">BERITA</span><strong><?=h($p['title'])?></strong><p><?=h($p['summary'])?></p><span><?=h(date_text($p['published_at']))?></span></a><?php endforeach;?>
-<?php foreach($events as $e):?><a class="service" href="<?=h(url('agenda'))?>"><span class="tag">AGENDA</span><strong><?=h($e['title'])?></strong><p><?=h($e['location'])?></p><span><?=h(date_text($e['starts_at']))?></span></a><?php endforeach;?>
+ ['▤','Pengajuan Warga','Layanan permohonan dan status pengajuan.',$u?'dashboard':'login'],
+ ['⌂','Ahli Waris','Informasi dan permohonan sesuai kewenangan.',$u&&permitted('waris',$u)?'waris':($u?'dashboard':'login')],
+ ['◷','Cuti Pegawai','Akses formulir cuti administratif.','dashboard'],
+ ['▥','Laporan PPPK','Kegiatan dan kinerja kepegawaian.',$u&&permitted('pppk',$u)?'pppk':($u?'dashboard':'login')],
+ ['♧','Kegiatan PJLP','Pelaporan pekerjaan dan kegiatan.',$u&&permitted('pjlp',$u)?'pjlp':($u?'dashboard':'login')],
+ ['◎','Informasi Publik','Berita dan informasi kelurahan.','berita'],
+ ['▦','Agenda','Jadwal kegiatan dan publikasi.','agenda']
+] as $service):?>
+<a class="service" href="<?=h(url($service[3]))?>">
+<div class="service-icon" aria-hidden="true"><?=h($service[0])?></div>
+<strong><?=h($service[1])?></strong><p><?=h($service[2])?></p>
+<span>Lihat Layanan <b aria-hidden="true">→</b></span>
+</a><?php endforeach;?></div></section>
+<section class="soft latest-news"><div class="container section"><div class="section-top"><span class="eyebrow dark">KABAR KELURAHAN</span><h2>Berita dan Informasi Terkini</h2><p>Publikasi terbaru berdasarkan data yang tersedia di portal.</p></div>
+<div class="cards"><?php foreach($posts as $p):?><a class="service" href="<?=h(url('berita'))?>"><span class="news-visual news-community" aria-hidden="true">INFORMASI PUBLIK</span><span class="tag">BERITA</span><strong><?=h($p['title'])?></strong><p><?=h($p['summary'])?></p><span><?=h(date_text($p['published_at']))?></span></a><?php endforeach;?>
+<?php foreach($events as $e):?><a class="service" href="<?=h(url('agenda'))?>"><span class="news-visual news-agenda" aria-hidden="true">AGENDA KELURAHAN</span><span class="tag">AGENDA</span><strong><?=h($e['title'])?></strong><p><?=h($e['location'])?></p><span><?=h(date_text($e['starts_at']))?></span></a><?php endforeach;?>
 <?php if(!$posts&&!$events):?><p>Belum terdapat publikasi atau agenda terbaru.</p><?php endif;?></div></div></section>
 <?php else:?>
 <section class="banner"><div class="container"><span class="eyebrow">PORTAL TERPADU KELURAHAN CIKOKO</span><h1><?=h(match($page){
