@@ -67,3 +67,60 @@ function w17_dashboard_apply(string $path,string $private,string $expectedHash):
     }finally {if(is_file($temp))@unlink($temp);}
     return basename($backup);
 }
+
+
+/** Optional Stage-15 entry link so staff can find detailed field forms from one input center. */
+function w17_center_ready(string $src):bool {
+    return str_contains($src,'SMARTCIKOKO_TAHAP17_INPUT_LINK')
+        && str_contains($src,'/laporan-wilayah17.php');
+}
+function w17_center_patch(string $src):string {
+    if(w17_center_ready($src))return $src;
+    if(strlen($src)<5000||!str_contains($src,'<div class="category-grid">')
+       ||!str_contains($src,'/assets/pusat-laporan.css')
+       ||str_contains($src,'SMARTCIKOKO_TAHAP17_INPUT_LINK'))
+        throw new RuntimeException('Struktur pusat laporan tidak cocok.');
+    $snippet=<<<'HTML'
+<!-- SMARTCIKOKO_TAHAP17_INPUT_LINK -->
+<?php if(is_file(dirname(__DIR__).'/portal_private/field_reports17.php')): ?>
+<div class="alert neutral">
+  <strong>Formulir terstruktur RT/RW, LMK, Jumantik, FKDM dan PPSU tersedia.</strong>
+  Formulir ini memakai hak akses sesuai peran dan terpisah dari laporan ringkas.
+  <a class="btn primary" href="/laporan-wilayah17.php">Buka Formulir Kewilayahan →</a>
+</div>
+<?php endif;?>
+HTML;
+    $new=str_replace('<div class="category-grid">',$snippet."\n".'<div class="category-grid">',$src,$count);
+    if($count!==1||!w17_center_ready($new))throw new RuntimeException('Tautan tidak dapat dipasang.');
+    return $new;
+}
+function w17_center_apply(string $path,string $private,string $expectedHash):string {
+    if(!preg_match('/^[0-9a-f]{64}$/D',$expectedHash)||!is_file($path)||is_link($path)||!is_writable($path))
+        throw new RuntimeException('File input tidak tersedia atau versi tidak valid.');
+    $base=realpath($private);$web=realpath(dirname($path));
+    if($base===false||$web===false||$base===$web||str_starts_with($base,$web.'/'))
+        throw new RuntimeException('Lokasi backup input tidak aman.');
+    $src=@file_get_contents($path);
+    if(!is_string($src)||!hash_equals(hash('sha256',$src),$expectedHash))
+        throw new RuntimeException('Pusat laporan berubah. Segarkan halaman pemasangan.');
+    $modified=w17_center_patch($src);
+    if($src===$modified)return '';
+    $dir=$base.'/wilayah17_backups';
+    if(is_link($dir))throw new RuntimeException('Folder backup tidak aman.');
+    if(!is_dir($dir)&&!@mkdir($dir,0700))throw new RuntimeException('Folder backup gagal dibuat.');
+    @chmod($dir,0700);
+    if(realpath($dir)!==$dir)throw new RuntimeException('Folder backup salah.');
+    $name=$dir.'/pusat-laporan-before-t17-'.date('Ymd-His').'-'.bin2hex(random_bytes(4)).'.bak';
+    if(@file_put_contents($name,$src,LOCK_EX)!==strlen($src))
+        throw new RuntimeException('Pencadangan pusat laporan gagal.');
+    @chmod($name,0600);
+    $tmp=@tempnam($dir,'w17_');
+    if(!$tmp)throw new RuntimeException('File sementara tidak tersedia.');
+    try{
+        if(@file_put_contents($tmp,$modified,LOCK_EX)!==strlen($modified))
+            throw new RuntimeException('Penulisan file kerja gagal.');
+        $mode=@fileperms($path);@chmod($tmp,$mode!==false?($mode&0777):0644);
+        if(!@rename($tmp,$path))throw new RuntimeException('Pusat laporan tidak dapat diperbarui.');
+    }finally{if(is_file($tmp))@unlink($tmp);}
+    return basename($name);
+}
