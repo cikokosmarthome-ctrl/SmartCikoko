@@ -37,6 +37,9 @@ function lr_source_roles():array {
 function lr_can_submit(array $user,string $category):bool {
     $catalog=lr_categories();
     if(!isset($catalog[$category])||$category==='waris')return false;
+    // Super Admin may enter an *administrative* summary in their own identity.
+    // It is never written as a native staff report or on behalf of another actor.
+    if(function_exists('is_super_admin') && is_super_admin($user))return true;
     $src=(string)($user['source']??'');$role=(string)($user['role']??'');
     if($category==='umum')return in_array($src,['pegawai','pancoran','smartapp'],true) && $role!=='';
     foreach(lr_source_roles()[$category]??[] as $pair)
@@ -126,13 +129,37 @@ function lr_query(array $actor,string $category='',int $page=1,int $limit=20):ar
     $q=$db->prepare('SELECT COUNT(*) FROM unified_report_intake'.$filter);
     $q->execute($params);$count=(int)$q->fetchColumn();
     $pages=max(1,(int)ceil($count/$limit));$page=min($page,$pages);
-    $q=$db->prepare('SELECT id,category,title,body,location,activity_date,end_date,status,created_at,updated_at FROM unified_report_intake'.$filter.' ORDER BY id DESC LIMIT ? OFFSET ?');
+    $q=$db->prepare('SELECT id,category,title,body,location,activity_date,end_date,status,review_note,version,created_at,updated_at FROM unified_report_intake'.$filter.' ORDER BY id DESC LIMIT ? OFFSET ?');
     $n=1;foreach($params as $param)$q->bindValue($n++,$param,PDO::PARAM_STR);
     $q->bindValue($n++,$limit,PDO::PARAM_INT);
     $q->bindValue($n,($page-1)*$limit,PDO::PARAM_INT);
     $q->execute();
     return ['rows'=>$q->fetchAll(PDO::FETCH_ASSOC),'total'=>$count,'page'=>$page,'pages'=>$pages];
 }
+/** A reporter may re-submit only their own report specifically returned for correction. */
+function lr_resubmit(array $actor,int $reportId,int $version,string $title,string $body,string $location,string $start,string $end):void {
+    if(!lr_actor($actor))throw new RuntimeException('Sesi pelapor tidak tersedia.');
+    if($reportId<1||$version<1)throw new InvalidArgumentException('Versi laporan tidak valid.');
+    $db=db('smartapp');$db->beginTransaction();
+    try{
+        $q=$db->prepare('SELECT category,actor_source,actor_id,status,version FROM unified_report_intake WHERE id=? FOR UPDATE');
+        $q->execute([$reportId]);$r=$q->fetch(PDO::FETCH_ASSOC);
+        if(!$r || $r['actor_source']!==$actor['source'] || !hash_equals((string)$r['actor_id'],(string)$actor['id']))
+            throw new RuntimeException('Laporan ini bukan milik Anda.');
+        lr_check_permission($actor,(string)$r['category']);
+        if($r['status']!=='perbaikan')throw new RuntimeException('Hanya laporan yang diminta perbaikan yang dapat dikirim ulang.');
+        if((int)$r['version']!==$version)throw new RuntimeException('Versi laporan sudah berubah. Segarkan halaman.');
+        lr_form_check((string)$r['category'],$title,$body,$location,$start,$end);
+        $q=$db->prepare("UPDATE unified_report_intake SET title=?,body=?,location=?,activity_date=?,end_date=?,status='diajukan',review_note=NULL,version=version+1,updated_at=NOW() WHERE id=?");
+        $q->execute([trim($title),trim($body),trim($location),$start,$end!==''?$end:null,$reportId]);
+        $q=$db->prepare('INSERT INTO unified_report_intake_history(report_id,old_status,new_status,note,actor_source,actor_id,created_at) VALUES(?,?,?,?,?,?,NOW())');
+        $q->execute([$reportId,'perbaikan','diajukan','Perbaikan laporan dikirim ulang.',(string)$actor['source'],(string)$actor['id']]);
+        $q=$db->prepare('INSERT INTO unified_audit(actor_source,actor_id,event_type,entity,subject_hash,created_at) VALUES(?,?,?,?,?,NOW())');
+        $q->execute([$actor['source'],(string)$actor['id'],'unified_report_resubmitted','unified_report_intake',hash('sha256',(string)$reportId)]);
+        $db->commit();
+    }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
+}
+
 function lr_review(array $admin,int $id,string $status,string $note):void {
     if(!lr_is_manager($admin))throw new RuntimeException('Hanya Super Administrator dapat mencatat peninjauan.');
     if($id<1||!isset(lr_stages()[$status]))throw new InvalidArgumentException('Status tidak valid.');
