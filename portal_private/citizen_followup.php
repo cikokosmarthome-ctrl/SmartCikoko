@@ -27,8 +27,8 @@ function t10_legacy_waris_requirements():array {
     ];
 }
 function t10_types(): array {
-    $types=['identitas'=>'Identitas (arsip lama)','keluarga'=>'Hubungan Keluarga (arsip lama)',
-       'kematian'=>'Keterangan Kematian (arsip lama)','lainnya'=>'Berkas Pendukung'];
+    $types=['identitas'=>'Identitas','keluarga'=>'Hubungan Keluarga',
+       'kematian'=>'Keterangan Kematian','lainnya'=>'Berkas Pendukung'];
     foreach(t10_legacy_waris_requirements() as $code=>$spec)$types[$code]=$spec['label'];
     return $types;
 }
