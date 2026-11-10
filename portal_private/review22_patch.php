@@ -92,8 +92,13 @@ function r22_apply(string $path,string $private,string $hash,string $type):strin
     if(!is_file($path)||is_link($path)||!is_writable($path))
         throw new RuntimeException('Berkas tidak dapat dimodifikasi secara aman.');
     $base=realpath($private);$web=realpath(dirname($path));
-    if($base===false||$web===false||$base===$web||str_starts_with($base,$web.'/'))
-        throw new RuntimeException('Lokasi backup tidak boleh berada dalam public_html.');
+    if($base===false||$web===false)
+        throw new RuntimeException('Lokasi backup privat belum tersedia.');
+    if($type==='verification'){
+        if($web!==$base)throw new RuntimeException('Berkas verifikasi wajib berada pada direktori privat.');
+    }elseif($base===$web||str_starts_with($base,$web.'/')){
+        throw new RuntimeException('Backup tidak boleh berada dalam public_html.');
+    }
     $original=@file_get_contents($path);
     if(!is_string($original)||!hash_equals(hash('sha256',$original),$hash))
         throw new RuntimeException('File berubah sejak installer dibuka. Muat ulang.');
