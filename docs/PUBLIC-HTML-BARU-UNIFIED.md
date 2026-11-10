@@ -22,7 +22,7 @@ Bagi Super Admin yang membuka `/?page=dashboard`, halaman diarahkan ke `/super-a
 
 ## Pembatasan keamanan
 
-- Tidak mengubah, memindahkan, atau mereset **`/home/datd1747/portal_private/`**, konfigurasi database, password, MFA, data laporan, dan berkas warga.
+- Tidak mengubah, memindahkan, atau mereset konfigurasi database, password, MFA, data laporan, dan berkas warga di **`/home/datd1747/portal_private/`**. Paket hanya **menambahkan satu file helper baru** `portal_private/mobile_forms_api.php` untuk formulir Android/iOS; file konfigurasi privat tidak disertakan.
 - PHP inti untuk login, pengajuan, verifikasi, ekspor, riwayat, dan formulir dari repository **dipertahankan**. Perubahan dilakukan pada kerangka tampilan dan navigasi Admin utama.
 - File `api/index.php`, `api/.htaccess` serta `public_html/.htaccess` dipertahankan.
 - Paket baru **tidak memuat** skrip sementara `instal-*.php`, `perbaiki-*.php`, `pasang-*.php`, atau `aktivasi-super-admin.php`. Pastikan modul Tahap 15–26 yang diperlukan sudah terpasang.
@@ -31,7 +31,7 @@ Bagi Super Admin yang membuka `/?page=dashboard`, halaman diarahkan ke `/super-a
 
 ## Paket
 
-`paket/SmartCikoko-PUBLIC-HTML-BARU-UNIFIED.zip` berisi:
+`paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip` berisi:
 
 ```text
 public_html_baru/
@@ -39,26 +39,33 @@ public_html_baru/
   index.php
   api/index.php
   api/.htaccess
+  api/mobile-forms.php
   super-admin-satu.php
   mfa.php
   formulir-pegawai16.php
   pusat-operasional23.php
   ... seluruh modul aktif dari repository ...
   assets/ui-modern.css
+  assets/portal-mockup.css
+  assets/cikoko-office-illustration.svg
   assets/ui-modern.js
   assets/admin-modern.js
   ... stylesheet pendukung ...
+portal_private/
+  mobile_forms_api.php # helper BARU: bukan berkas konfigurasi
 BACA-SEBELUM-GANTI.txt
 MANIFEST-DEPLOY.json
 ```
 
 Tidak ada SQL manual dan tidak ada installer di folder publik baru.
 
+**Integrasi Flutter:** endpoint `public_html_baru/api/mobile-forms.php` memerlukan helper baru `portal_private/mobile_forms_api.php`. Keduanya sudah disertakan dalam ZIP V4, sedangkan konfigurasi database privat tetap milik hosting. Setelah situs baru diuji, aplikasi Flutter bisa menggunakan fungsi laporan PPPK, PJLP, cuti, RT/RW, LMK, Jumantik, dan layanan lainnya sesuai hak akses.
+
 ## CARA PASANG YANG AMAN — JANGAN HAPUS WEB AKTIF DULU
 
 1. **Backup penuh** folder `/home/datd1747/public_html/`, `/home/datd1747/portal_private/`, kedua database, file tersembunyi `.htaccess`, file verifikasi SSL/domain (`.well-known`), serta unggahan yang hanya ada di hosting. Simpan backup di tempat aman **di luar webroot**.
 2. Buka cPanel File Manager, menuju `/home/datd1747/`.
-3. Upload `SmartCikoko-PUBLIC-HTML-BARU-UNIFIED.zip` lalu klik **Extract di `/home/datd1747/`**. Ini membuat **`/home/datd1747/public_html_baru/`**, terpisah dari website aktif; tidak menimpa `public_html`.
+3. Upload `SmartCikoko-WEBSITE-MOCKUP-V4.zip` lalu klik **Extract di `/home/datd1747/`**. Ini membuat **`/home/datd1747/public_html_baru/`**, terpisah dari website aktif; tidak menimpa `public_html`. ZIP juga menambahkan `portal_private/mobile_forms_api.php` untuk API Flutter, tanpa mengganti konfigurasi, MFA, atau file database.
 4. Periksa `public_html_baru/index.php`, `.htaccess`, `api/`, `assets/` serta file modul penting tersedia.
 5. **Uji staging** melalui domain/subdomain uji dengan Document Root `/home/datd1747/public_html_baru`, jika tersedia pada paket Rumahweb. Karena letaknya satu tingkat di bawah home, kode PHP yang menggunakan `dirname(__DIR__)` tetap menemukan `portal_private`. Perlu diketahui: URL absolut dan cookie pada modul tertentu mungkin tetap memerlukan uji akhir di domain asli.
 6. Uji dengan **akun dummy**: login biasa, Super Admin + Google Authenticator, menu Admin dengan tab internal, PPPK/JLP/cuti, RT/RW, LMK, Jumantik, pelayanan Ahli Waris, penugasan, verifikasi, unggah/unduh, dan logout. Jangan gunakan data warga asli untuk UAT.
