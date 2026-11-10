@@ -91,6 +91,27 @@ function sc_workflow_feed(array $actor):array {
                       'created_at'=>(string)$row['created_at'],
                     ];
                 }
+                // Upload events are derived from original private attachment records,
+                // not from a fabricated client-side success notification.
+                if(sc_workflow_ready('unified_citizen_files')){
+                    $q=db('smartapp')->prepare('SELECT f.id,f.request_id,f.created_at,a.reference_no,a.status'.
+                      ' FROM unified_citizen_files f JOIN unified_citizen_requests a'.
+                      ' ON a.id=f.request_id WHERE a.account_id=?'.
+                      ' ORDER BY f.created_at DESC,f.id DESC LIMIT 30');
+                    $q->execute([(string)$actor['id']]);
+                    foreach($q->fetchAll(PDO::FETCH_ASSOC) as $file){
+                        $progress=sc_workflow_progress('warga',(string)$file['status']);
+                        $events[]=[
+                          'key'=>'file:'.(int)$file['id'],
+                          'group'=>'warga','request_id'=>(int)$file['request_id'],
+                          'title'=>(string)$file['reference_no'].' · Lampiran tersimpan',
+                          'message'=>'Berkas lampiran sudah tersimpan privat dan menunggu pemeriksaan sesuai alur.',
+                          'status'=>(string)$file['status'],
+                          'progress_percent'=>$progress['progress_percent'],
+                          'created_at'=>(string)$file['created_at'],
+                        ];
+                    }
+                }
             }else{$unavailable[]='warga';}
         }
     }
