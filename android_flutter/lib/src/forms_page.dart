@@ -37,7 +37,7 @@ class _FormsPageState extends State<FormsPage> {
           return const Center(child:CircularProgressIndicator());
         }
         return ListView(padding:const EdgeInsets.all(18),children:[
-          const CivicPageTitle(title:'Pilih Laporan',subtitle:'Formulir sesuai hak akses akun Anda.'),
+          const CivicPageTitle(title:'Laporan Cikoko Smart',subtitle:'Formulir Pegawai, Wilayah, dan Ringkasan dari backend yang sama.'),
           const SizedBox(height:18),
           if(snap.data!.isEmpty)const CivicEmpty('Belum ada formulir untuk peran akun ini.'),
           for(final schema in snap.data!) Padding(
