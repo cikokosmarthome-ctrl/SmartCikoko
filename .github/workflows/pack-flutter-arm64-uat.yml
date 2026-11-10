@@ -1,0 +1,90 @@
+name: SmartCikoko Android ARM64 — Instalasi UAT
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android_flutter/**'
+      - 'scripts/brand_flutter_android.py'
+      - '.github/workflows/pack-flutter-arm64-uat.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build-arm64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Flutter stable
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate actual Android application project
+        working-directory: android_flutter
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter create --org id.smartcikoko --project-name smartcikoko --platforms android .
+          rm -f test/widget_test.dart
+          flutter pub get
+      - name: Apply SmartCikoko app identity and launcher artwork
+        run: python3 scripts/brand_flutter_android.py android_flutter
+      - name: Validate Flutter app and widgets
+        working-directory: android_flutter
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter analyze --no-fatal-infos
+          flutter test
+      - name: Build INSTALLABLE ARM64-only APK (release optimization)
+        working-directory: android_flutter
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build apk --release --target-platform android-arm64 --split-per-abi
+      - name: Verify APK architecture, app identity and signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=android_flutter/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          test -s "$APK"
+          unzip -t "$APK" | tail -1
+          unzip -Z1 "$APK" | grep -q '^lib/arm64-v8a/libflutter.so$'
+          if unzip -Z1 "$APK" | grep -Eq '^lib/(armeabi-v7a|x86|x86_64)/'; then
+            echo "Unexpected non ARM64 native libraries"; exit 1
+          fi
+          APKSIGNER="$(find "${ANDROID_HOME}/build-tools" -type f -name apksigner | sort -V | tail -1)"
+          AAPT="$(find "${ANDROID_HOME}/build-tools" -type f -name aapt | sort -V | tail -1)"
+          test -x "$APKSIGNER" && test -x "$AAPT"
+          "$APKSIGNER" verify --verbose "$APK"
+          "$AAPT" dump badging "$APK" | grep -E "^(package:|application-label:|native-code:)"
+          "$AAPT" dump badging "$APK" | grep -q "name='id.smartcikoko.smartcikoko'"
+          "$AAPT" dump badging "$APK" | grep -q "application-label:'SmartCikoko'"
+          mkdir -p dist
+          cp "$APK" dist/SmartCikoko-Android-ARM64-UAT.apk
+          sha256sum dist/SmartCikoko-Android-ARM64-UAT.apk
+          ls -lh dist/SmartCikoko-Android-ARM64-UAT.apk
+      - name: Publish single ARM64 APK (not source code)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG=smartcikoko-android-arm64-uat-v1
+          APK=dist/SmartCikoko-Android-ARM64-UAT.apk
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" --clobber
+          else
+            gh release create "$TAG" "$APK" --target "$GITHUB_SHA" \
+              --title "SmartCikoko Android ARM64 — APK siap instal (UAT)" \
+              --notes "APK asli Flutter mode release (ARM64-v8a saja), bukan ZIP source/Flutter mentah. Nama launcher SmartCikoko, ID id.smartcikoko.smartcikoko, ikon biru-emas sementara. Ditandatangani dengan konfigurasi debug Flutter template untuk UAT, BUKAN kunci produksi/Play Store. Karena package ID/tanda tangan berbeda, pemasangan versi lama mungkin perlu dihapus setelah memastikan data tersimpan di server. Jangan gunakan data warga nyata sebelum backend dipasang dan diuji." \
+              --prerelease
+          fi
+      - name: Upload independently verified ARM64 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-Android-ARM64-APK-Installable
+          path: dist/SmartCikoko-Android-ARM64-UAT.apk
+          retention-days: 30
+          if-no-files-found: error
