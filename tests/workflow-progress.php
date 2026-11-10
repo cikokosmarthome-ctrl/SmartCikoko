@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require dirname(__DIR__).'/portal_private/workflow_progress.php';
 require dirname(__DIR__).'/portal_private/citizen_followup.php';
-function verify_workflow(bool $condition,string $message):void{
+function verify_work(bool $condition,string $message):void{
     if(!$condition){fwrite(STDERR,"Workflow FAIL: $message\n");exit(1);}
 }
 foreach(['warga','pegawai','wilayah'] as $group){
