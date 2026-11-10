@@ -1,0 +1,137 @@
+name: Paket Tahap 26 Uji Operasional
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/uat26.php'
+      - 'portal_private/uat26_patch.php'
+      - 'portal_private/uat26_admin_panel.php'
+      - 'public_html/uji-operasional26.php'
+      - 'public_html/instal-uji26.php'
+      - 'public_html/assets/uji-operasional26.css'
+      - 'public_html/assets/uat26-admin.css'
+      - 'tests/stage26-uat.php'
+      - '.github/workflows/pack-stage26.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage26-release
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,pdo_sqlite
+          tools: none
+      - name: Validate Stage26 PHP syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/uat26.php portal_private/uat26_patch.php portal_private/uat26_admin_panel.php public_html/uji-operasional26.php public_html/instal-uji26.php tests/stage26-uat.php; do
+            php -l "$f"
+          done
+      - name: Simulate UAT journal and security restrictions using SQLite
+        run: php tests/stage26-uat.php
+      - name: Regression for prior Stage25 and Stage23/24 checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          php tests/stage25-operational.php
+          php tests/stage23-hub.php
+      - name: Lint exact patched existing Super Admin page
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -r 'require "portal_private/uat26_patch.php"; file_put_contents("/tmp/stage26-admin.php",u26_patch(file_get_contents("public_html/super-admin-satu.php")));'
+          php -l /tmp/stage26-admin.php
+      - name: Check privacy and no legacy schema writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('portal_private/uat26.php').read_text()
+          installer=Path('public_html/instal-uji26.php').read_text()
+          view=Path('public_html/uji-operasional26.php').read_text()
+          for path in ['public_html/assets/uji-operasional26.css','public_html/assets/uat26-admin.css']:
+              css=Path(path).read_text()
+              assert css.count('{')==css.count('}'),path
+              assert '@media' in css,path
+          assert 'u26_validate' in src
+          assert 'u26_note' in src and 'u26_blockers' in src
+          assert 'account_control_allowed' in src
+          assert 'INSERT INTO unified_uat_events26' in src
+          assert 'INSERT INTO unified_audit' in src
+          assert 'submit_token' in src
+          assert "state==='pass'&&!$tested" in src
+          assert "unified_uat_events26" in installer
+          assert 'CREATE TABLE IF NOT EXISTS' in installer
+          assert 'require_super_admin()' in installer and 'verify_csrf()' in installer
+          for unwanted in ['ALTER TABLE users','UPDATE unified_report','DELETE FROM unified_report','UPDATE unified_detailed','UPDATE unified_field','DROP TABLE']:
+              assert unwanted not in src and unwanted not in installer,unwanted
+          assert 'uat26_backups' in Path('portal_private/uat26_patch.php').read_text()
+          assert 'bin2hex(random_bytes(16))' in view
+          print('Stage26 manual-only UAT, private audit trail and minimal installer checks passed')
+          PY
+      - name: Build additive single ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage26_pkg
+          mkdir -p stage26_pkg/portal_private stage26_pkg/public_html/assets paket
+          cp portal_private/uat26.php portal_private/uat26_patch.php portal_private/uat26_admin_panel.php stage26_pkg/portal_private/
+          cp public_html/uji-operasional26.php public_html/instal-uji26.php stage26_pkg/public_html/
+          cp public_html/assets/uji-operasional26.css public_html/assets/uat26-admin.css stage26_pkg/public_html/assets/
+          cat > stage26_pkg/BACA-TAHAP26.txt <<'HELP'
+          SMARTCIKOKO TAHAP26 — UJI OPERASIONAL & TINDAK LANJUT
+          1. Backup seluruh website, database Pegawai dan SmartApp, MFA.
+          2. Pasang Tahap25 terlebih dahulu jika belum ada.
+          3. cPanel File Manager -> /home/datd1747/ -> Upload ZIP.
+          4. Extract ZIP di /home/datd1747/ (bukan di public_html).
+          5. Login Super Admin dengan Google Authenticator.
+          6. Buka https://datawebs.my.id/instal-uji26.php
+          7. Klik Aktifkan Uji Operasional Tahap26.
+          8. Buka https://datawebs.my.id/uji-operasional26.php
+          9. Uji 16 skenario dengan akun dummy saja, jangan data warga asli.
+          10. Catat Lulus/Gagal/Terhambat beserta alasan tanpa NIK,
+              nama warga, email, password, OTP, atau dokumen.
+          11. Periksa daftar temuan serta riwayat uji ulang.
+          12. Hapus installer dan ZIP dari hosting setelah diuji.
+          13. Simpan backup privat di portal_private/uat26_backups/.
+          Installer menambah 1 tabel UAT baru pada SmartApp tanpa SQL manual.
+          Tidak mengubah data Pegawai, login, MFA atau laporan lama.
+          Semua status default Belum diuji. Status Lulus hanya catatan
+          manual dan BUKAN sertifikat keamanan/kesiapan produksi.
+          HELP
+          rm -f paket/SmartCikoko-TAHAP26-UJI-OPERASIONAL.zip
+          (cd stage26_pkg && zip -q -X -r ../paket/SmartCikoko-TAHAP26-UJI-OPERASIONAL.zip .)
+          unzip -t paket/SmartCikoko-TAHAP26-UJI-OPERASIONAL.zip
+          for f in portal_private/uat26.php portal_private/uat26_patch.php portal_private/uat26_admin_panel.php public_html/uji-operasional26.php public_html/instal-uji26.php public_html/assets/uji-operasional26.css public_html/assets/uat26-admin.css; do
+            unzip -Z1 paket/SmartCikoko-TAHAP26-UJI-OPERASIONAL.zip | grep -Fxq "$f"
+          done
+          if unzip -Z1 paket/SmartCikoko-TAHAP26-UJI-OPERASIONAL.zip | grep -Eq '(^|/)(index|bootstrap|auth|config|super_admin|mfa|super-admin-satu|pusat-laporan|verification19|review22|audit25|hub23)\.php$'; then
+            echo 'ERROR: No existing core PHP file may be overwritten on extract'
+            exit 1
+          fi
+      - name: Publish verified Stage26 ZIP to GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP26-UJI-OPERASIONAL.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage26 UAT and follow-up ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP26-UJI-OPERASIONAL
+          path: paket/SmartCikoko-TAHAP26-UJI-OPERASIONAL.zip
+          retention-days: 30
