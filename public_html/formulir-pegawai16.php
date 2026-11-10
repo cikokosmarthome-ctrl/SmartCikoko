@@ -23,10 +23,10 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
         $action=(string)($_POST['action']??'');
         if($action==='create'){
             $newId=f16_create($user,(string)($_POST['kind']??''),$_POST,(string)($_POST['request_key']??''),!empty($_POST['submit_now']));
-            $_SESSION['f16_notice']='Formulir #'.$newId.' tersimpan. Ini adalah draf administrasi terstruktur, bukan transaksi resmi pada aplikasi lama.';
+            $_SESSION['f16_notice']='Formulir #'.$newId.(!empty($_POST['submit_now'])?' berhasil diajukan untuk peninjauan.':' tersimpan sebagai draf.');
         }elseif($action==='update'){
             f16_update($user,(int)($_POST['form_id']??0),(int)($_POST['version']??0),$_POST,!empty($_POST['submit_now']));
-            $_SESSION['f16_notice']='Perubahan formulir tersimpan dalam riwayat.';
+            $_SESSION['f16_notice']=!empty($_POST['submit_now'])?'Perubahan formulir berhasil diajukan kembali.':'Perubahan draf tersimpan.';
         }elseif($action==='review'&&$manager){
             f16_review($user,(int)($_POST['form_id']??0),(string)($_POST['status']??''),trim((string)($_POST['review_note']??'')));
             $_SESSION['f16_notice']='Hasil peninjauan administratif tersimpan.';
@@ -76,13 +76,13 @@ function f16_href(string $kind,int $page=1):string{
 <?php if($error):?><div class="notice danger"><?=h($error)?></div><?php endif;?>
 <?php if(!$ready):?><div class="notice danger">Formulir Tahap 16 belum terpasang. Minta Super Admin menjalankan installer satu tombol; tidak perlu impor ulang SQL.</div><?php endif;?>
 <div class="tabs">
-<?php foreach($kinds as $key=>$meta):?>
+<?php foreach($kinds as $key=>$meta): if(!$manager&&!f16_authorized($user,$key))continue;?>
 <a class="<?=$kind===$key?'current':''?>" href="<?=h(f16_href($key))?>"><?=h($meta['name'])?></a>
 <?php endforeach;?></div>
-<div class="layout">
+<div class="layout <?=$manager?'manager-mode':''?>">
 <section class="panel" id="pengajuan">
 <div class="panel-top"><div><span class="eyebrow">INPUT TERSTRUKTUR</span><h2><?=h($kinds[$kind]['name'])?></h2></div><span class="chip">Draf Administrasi</span></div>
-<p class="context">Disesuaikan dengan bidang pada tabel lama <code><?=h($kinds[$kind]['native'])?></code>. Pengiriman formulir ini <b>tidak otomatis mencatat laporan resmi, mengurangi saldo cuti, memverifikasi kehadiran, atau mengunggah foto/GPS</b>.</p>
+<details class="scope"><summary>Informasi formulir</summary><p>Disesuaikan dengan sumber <code><?=h($kinds[$kind]['native'])?></code>. Pengajuan ini tidak otomatis menjadi laporan resmi, persetujuan cuti, atau unggahan bukti.</p></details>
 <?php if($manager):?><div class="empty">Super Admin bertugas meninjau; pembuatan formulir atas nama pegawai lain tidak diizinkan. Gunakan akun petugas untuk pengajuan baru.</div>
 <?php elseif(!$allowed):?><div class="empty">Kategori ini hanya tersedia untuk akun dan peran yang sesuai. Silakan pilih formulir yang menjadi kewenangan Anda.</div>
 <?php elseif(!$ready):?><div class="empty">Installer belum dijalankan.</div>
@@ -96,10 +96,10 @@ function f16_href(string $kind,int $page=1):string{
 <?php if($one):?><input type="hidden" name="form_id" value="<?=(int)$one['id']?>"><input type="hidden" name="version" value="<?=(int)$one['version']?>"><?php endif;?>
 <?php foreach($kinds[$kind]['fields'] as $key=>$spec):
  $value=(string)($editData[$key]??($key==='tanggal_surat'?date('Y-m-d'):'')); ?>
-<label>
+<label class="<?=$spec['type']==='textarea'?'wide-field':''?>">
 <span><?=h($spec['label'])?><?=!empty($spec['required'])?' *':''?></span>
 <?php if($spec['type']==='textarea'):?>
-<textarea name="<?=h($key)?>" rows="3" maxlength="<?=(int)($spec['max']??2000)?>" <?=!empty($spec['required'])?'required':''?> placeholder="Isi sesuai kegiatan sebenarnya; jangan cantumkan NIK atau password."><?=h($value)?></textarea>
+<textarea name="<?=h($key)?>" rows="2" maxlength="<?=(int)($spec['max']??2000)?>" <?=!empty($spec['required'])?'required':''?> placeholder="Isi sesuai kegiatan sebenarnya; jangan cantumkan NIK atau password."><?=h($value)?></textarea>
 <?php elseif($spec['type']==='select'):?>
 <select name="<?=h($key)?>" required>
 <option value="">Pilih jenis laporan</option>
@@ -109,9 +109,9 @@ function f16_href(string $kind,int $page=1):string{
 <?php endif;?>
 </label>
 <?php endforeach;?>
-<div class="notice info">Form ini belum menyimpan berkas bukti. Bukti foto, lokasi, dan naskah resmi harus diproses melalui sistem lama sampai pemindaian malware dan tata cara persetujuan siap.</div>
+<p class="form-help">Belum mendukung unggah bukti atau pengesahan resmi.</p>
 <div class="buttons"><button type="submit" name="submit_now" value="0" class="button secondary">Simpan Draf</button>
-<button type="submit" name="submit_now" value="1" class="button primary">Ajukan Untuk Peninjauan →</button></div>
+<button type="submit" name="submit_now" value="1" class="button primary">Ajukan Laporan</button></div>
 </form>
 <?php endif;?>
 </section>
@@ -150,12 +150,12 @@ function f16_href(string $kind,int $page=1):string{
 </section>
 </div>
 <?php if($allowed):?>
-<section class="panel native"><div><span class="eyebrow">SUMBER ASLI · HANYA BACA</span><h2>Riwayat pada Website Sebelumnya</h2><p>Hanya milik akun Pegawai yang sedang masuk; laporan sumber Pancoran belum dicampur karena ID akunnya berbeda.</p></div>
+<details class="panel native"><summary>Riwayat dari website lama <small>Opsional · hanya baca</small></summary><div class="native-content"><p>Hanya data yang berhak dilihat oleh akun Pegawai ini; identitas akun sumber tidak digabung otomatis.</p>
 <?php if(!$native):?><div class="empty">Belum ditemukan catatan sumber asli untuk identitas ini, atau modul sumber tidak dapat dibaca.</div>
 <?php else:?><div class="native-table"><table><thead><tr>
 <?php foreach(array_keys($native[0]) as $col):?><th><?=h(str_replace('_',' ',ucwords($col,'_')))?></th><?php endforeach;?></tr></thead><tbody>
 <?php foreach($native as $r):?><tr><?php foreach($r as $val):?><td><?=h($val??'—')?></td><?php endforeach;?></tr><?php endforeach;?></tbody></table></div><?php endif;?>
-</section><?php endif;?>
+</div></details><?php endif;?>
 <p class="disclaimer">Catatan: formulir terstruktur Tahap 16 adalah pengajuan administratif untuk verifikasi. Status “Ditutup” tidak berarti cuti disetujui, kinerja PPPK dinilai, atau laporan PJLP resmi terkirim. Pengesahan tetap mengikuti sistem serta kewenangan instansi.</p>
 </main><footer><div class="wrap">© <?=date('Y')?> Kelurahan Cikoko · Formulir Terstruktur Internal</div></footer>
 </body></html>
