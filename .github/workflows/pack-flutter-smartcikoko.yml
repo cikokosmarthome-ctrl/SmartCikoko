@@ -41,6 +41,8 @@ jobs:
           rm -f test/widget_test.dart
           flutter pub get
           dart format lib test
+          # Formatting is already captured in the distributable ZIP.
+          # Reset runner-only tracked changes so GitHub publish can rebase safely.
       - name: Analyze Flutter and run Widget/API tests
         working-directory: android_flutter
         shell: bash
@@ -60,7 +62,8 @@ jobs:
           rsync -a android_flutter/ _flutter_dist/SmartCikoko-Flutter/ \
             --exclude .dart_tool --exclude build --exclude .flutter-plugins \
             --exclude .flutter-plugins-dependencies --exclude .metadata \
-            --exclude Pods --exclude .gradle
+            --exclude Pods --exclude .gradle --exclude .kotlin \
+            --exclude local.properties --exclude ephemeral --exclude '*.iml'
           cp android_flutter/README.md _flutter_dist/BACA-FLUTTER.txt
           mkdir -p paket
           rm -f paket/SmartCikoko-FLUTTER-ANDROID-IOS.zip
@@ -81,12 +84,28 @@ jobs:
               assert not any('/.dart_tool/' in x or '/build/' in x for x in names)
           print('Both Android and iOS platform source trees bundled')
           PY
+      - name: Publish Android UAT APK and Flutter project as GitHub prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG=smartcikoko-mobile-uat-v1
+          cp android_flutter/build/app/outputs/flutter-apk/app-debug.apk SmartCikoko-Android-UAT.apk
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" SmartCikoko-Android-UAT.apk paket/SmartCikoko-FLUTTER-ANDROID-IOS.zip --clobber
+          else
+            gh release create "$TAG" SmartCikoko-Android-UAT.apk paket/SmartCikoko-FLUTTER-ANDROID-IOS.zip --target "$GITHUB_SHA" --title "SmartCikoko Mobile Flutter — UAT Android dan iOS" --notes "Versi UAT internal. Android APK debug; Flutter project lengkap Android+iOS. Build iOS memerlukan Apple signing untuk IPA/TestFlight. Backend harus memakai SmartCikoko PHP API aktif. Jangan gunakan data warga asli untuk pengujian." --prerelease
+          fi
       - name: Publish source ZIP in SmartCikoko GitHub packages
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Flutter create/dart format changed tracked files in this runner only.
+          # The generated source ZIP already includes the formatted copies.
+          git restore --worktree .
           git add -f paket/SmartCikoko-FLUTTER-ANDROID-IOS.zip
           if ! git diff --cached --quiet; then
             git commit -m "Release SmartCikoko Flutter Android and iOS project"
