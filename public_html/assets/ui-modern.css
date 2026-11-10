@@ -124,6 +124,23 @@ body.sc-body.sc-embedded > main .heading h1{font-size:20px}
 body.sc-body.sc-embedded > main .panel{margin-bottom:11px}
 body.sc-body.sc-embedded > .notice{margin:8px 12px}
 
+/* Shared fallback header/footer for minimal pages such as MFA and privacy. */
+body.sc-body > header.sc-standard-header{position:sticky!important;top:0!important;padding:0;background:#fff}
+.sc-standard-head{width:min(1200px,100%);margin:auto;min-height:58px;padding:8px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sc-standard-head .sc-brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;color:var(--sc-navy)}
+.sc-standard-head .sc-brand b,.sc-standard-head .sc-brand small{display:block}
+.sc-standard-head .sc-brand b{font-size:13px}
+.sc-standard-head .sc-brand small{font-size:9px;color:#7d94a4}
+.sc-standard-head .sc-crest{display:grid;place-items:center;width:34px;height:36px;font-size:12px;border:2px solid #d8ae69;border-radius:5px 5px 10px 10px;background:#123e5c;color:#f1ce92;font-weight:900}
+.sc-standard-head nav{display:flex;flex-wrap:wrap;gap:5px}
+.sc-standard-head nav a{padding:8px 10px;font-size:11px;font-weight:750;text-decoration:none;color:#235e84}
+.sc-standard-head nav a:hover{background:#eaf3fa}
+.sc-standard-foot{width:min(1200px,100%);margin:auto;padding:0 20px;font-size:10px}
+body.sc-page-kebijakan-privasi main{width:min(820px,100%);margin:0 auto;flex:1 0 auto;padding:30px 22px!important}
+body.sc-page-kebijakan-privasi main h1{font-size:25px;line-height:1.2;margin:8px 0 15px}
+body.sc-page-kebijakan-privasi main p{font-size:12px;line-height:1.7}
+body.sc-body.sc-embedded > header.sc-standard-header{display:none!important}
+
 /* Every route remains usable on mobile without fixed-width overflow. */
 @media(max-width:990px){
  body.sc-page-index .hero-grid{grid-template-columns:1fr 1fr;gap:14px}
