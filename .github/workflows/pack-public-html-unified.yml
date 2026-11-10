@@ -139,7 +139,7 @@ jobs:
                   'BACA-PERBAIKAN-BERANDA.txt'
               },files
               html=z.read('public_html/index.php')
-              assert b'/assets/portal-mockup.css?v=20261110a' in html
+              assert b'/assets/portal-mockup.css?v=20261110b' in html
               assert b'class="hero-art"' in html
           print('V4 mockup replaces one existing PHP and adds CSS and illustration.')
           PY
