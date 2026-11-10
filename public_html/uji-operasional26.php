@@ -105,7 +105,7 @@ foreach($snapshot['rows'] as $r)$grouped[$r['area']][]=$r;
 <option value="blocked" <?=$case['result']==='blocked'?'selected':''?>>Terhambat — belum dapat diuji</option>
 </select></label>
 <label>Catatan uji atau tindak lanjut (15–240 karakter jika bukan “Belum diuji”)
-<textarea name="note" rows="2" maxlength="240" placeholder="Contoh: akun uji RT tidak dapat membuka formulir karena hak akses belum disesuaikan. Jangan tulis identitas."><?=h($error!==''&&(($_POST['case_key']??'')===$case['key'])?(string)($_POST['note']??''):$case['result']==='pending'?'':$case['note'])?></textarea></label>
+<textarea name="note" rows="2" maxlength="240" placeholder="Contoh: akun uji RT tidak dapat membuka formulir karena hak akses belum disesuaikan. Jangan tulis identitas."><?=h(($error!==''&&(($_POST['case_key']??'')===$case['key'])) ? (string)($_POST['note']??'') : ($case['result']==='pending' ? '' : $case['note']))?></textarea></label>
 <label class="check"><input type="checkbox" name="tested" value="1"> Saya menyatakan hasil Lulus hanya setelah pengujian nyata dengan akun/laporan dummy.</label>
 <button class="button" type="submit">Simpan Hasil dan Riwayat</button>
 </form></div></details>
