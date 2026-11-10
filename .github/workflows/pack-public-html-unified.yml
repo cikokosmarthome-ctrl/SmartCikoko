@@ -60,9 +60,7 @@ jobs:
           set -euo pipefail
           mkdir -p paket
           rm -f paket/SmartCikoko-PUBLIC-HTML-BARU-UNIFIED.zip
-          (cd _webroot_replacement &&
-            zip -q -X -r ../paket/SmartCikoko-PUBLIC-HTML-BARU-UNIFIED.zip
-              public_html_baru BACA-SEBELUM-GANTI.txt MANIFEST-DEPLOY.json)
+          (cd _webroot_replacement && zip -q -X -r ../paket/SmartCikoko-PUBLIC-HTML-BARU-UNIFIED.zip public_html_baru BACA-SEBELUM-GANTI.txt MANIFEST-DEPLOY.json)
           unzip -t paket/SmartCikoko-PUBLIC-HTML-BARU-UNIFIED.zip
           python3 - <<'PY'
           from pathlib import Path
