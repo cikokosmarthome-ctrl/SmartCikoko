@@ -211,6 +211,7 @@ class _PortalShellState extends State<PortalShell> {
         ServicesTab(
           signedIn: token != null,
           user: user,
+          permissions: permissions,
           token: token,
           onLogin: login,
           onForms: openForms,
@@ -595,12 +596,14 @@ class ServicesTab extends StatelessWidget {
   final bool signedIn;
   final String? token;
   final Map<String, dynamic> user;
+  final Map<String, dynamic> permissions;
   final VoidCallback onLogin, onForms, onCitizen, onAdmin;
   const ServicesTab({
     super.key,
     required this.signedIn,
     required this.token,
     required this.user,
+    required this.permissions,
     required this.onLogin,
     required this.onForms,
     required this.onCitizen,
@@ -625,9 +628,7 @@ class ServicesTab extends StatelessWidget {
               title: 'Laporan dan Formulir',
               caption: 'PPPK, PJLP, cuti, RT/RW, LMK, Jumantik, dan kegiatan.',
               onTap: signedIn ? onForms : onLogin),
-          if (user['role'] == 'superadmin' ||
-              user['role'] == 'admin' ||
-              user['role'] == 'admin_kelurahan')
+          if (permissions['super_admin'] == true)
             _ServiceItem(
                 icon: Icons.admin_panel_settings_outlined,
                 title: 'Pusat Administrator',
