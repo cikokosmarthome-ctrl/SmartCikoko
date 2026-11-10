@@ -6,6 +6,7 @@ try{
     require dirname(__DIR__).'/portal_private/bootstrap.php';
     require_once dirname(__DIR__).'/portal_private/citizen_requests.php';
     require_once dirname(__DIR__).'/portal_private/citizen_followup.php';
+    require_once dirname(__DIR__).'/portal_private/workflow_progress.php';
     $actor=t9_actor(actor());
     if(!$actor){header('Location: /?page=login',true,303);exit;}
     if(!t9_is_citizen($actor) && !t9_can_monitor($actor)){http_response_code(403);exit('Akses ditolak.');}
@@ -75,6 +76,12 @@ try{
 <?php else:?>
 <span class="eyebrow">RINCIAN PERMOHONAN</span><h2><?=h($case['reference_no'])?></h2>
 <div class="facts"><div><small>PEMOHON</small><strong><?=h($case['applicant_name'])?></strong></div><div><small>STATUS</small><strong><?=h(t9_stages()[$case['status']]??$case['status'])?></strong></div></div>
+<?php $progress=sc_workflow_progress('warga',(string)$case['status']);?>
+<div aria-label="Progres pelayanan administratif"><p><strong>Progres: <?=(int)$progress['progress_percent']?>%</strong> · <?=h($progress['status_label'])?></p><progress value="<?=(int)$progress['progress_percent']?>" max="100" style="width:100%;height:16px"><?=(int)$progress['progress_percent']?>%</progress><p class="muted"><?=h($progress['next_step'])?></p></div>
+<h3>Checklist Lampiran Sesuai Website Lama</h3>
+<p class="muted">Daftar ini memakai label dan persyaratan pada formulir Ahli Waris sebelumnya. Status unggahan tidak otomatis menentukan keputusan surat; petugas tetap memverifikasi.</p>
+<ul><?php foreach(t10_requirement_status($files) as $requirement):?><li><?=h($requirement['label'])?> · <?=h($requirement['required']?'Wajib sesuai formulir lama':'Kondisional')?> · <strong><?=h($requirement['uploaded']?'Sudah diunggah':'Belum diunggah')?></strong></li><?php endforeach;?></ul>
+<a href="/aktivitas-terpadu.php">Lihat Semua Progres dan Notifikasi →</a>
 <a class="button outline" href="/bukti-pengajuan.php?id=<?=$id?>" target="_blank" rel="noopener">Cetak Bukti Informasi ↗</a>
 <h3>Lampiran yang Tersimpan</h3>
 <p class="muted">Lampiran dapat diakses oleh pemohon sendiri dan petugas berwenang. Tidak dibagikan melalui URL penyimpanan publik.</p>
