@@ -36,6 +36,9 @@ jobs:
         run: |
           set -euo pipefail
           flutter create --project-name smartcikoko --platforms android,ios .
+          # Flutter's template inserts an obsolete MyApp widget test;
+          # keep our actual SmartCikoko test suite instead.
+          rm -f test/widget_test.dart
           flutter pub get
           dart format lib test
       - name: Analyze Flutter and run Widget/API tests
