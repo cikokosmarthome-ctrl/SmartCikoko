@@ -32,8 +32,8 @@ Data lama dan laporan ringkas baru ditampilkan dalam kolom terpisah. Tidak ada m
 - RT/RW mengirim laporan wilayah, LMK mengirim laporan LMK, Jumantik mengirim laporan Jumantik, FKDM dan PPSU sesuai peran.
 - PPPK dan PJLP mengirim ringkasan kegiatan dengan akun Pegawai/Pancoran yang sesuai.
 - Pengajuan awal cuti disediakan untuk akun Pegawai dengan peran asn/pppk/pjlp/admin.
-- Super Admin dapat melihat semua laporan baru dan mencatat tindak lanjut administratif, tetapi tidak membuat laporan atas nama petugas lain atau mengesahkan cuti/surat.
-- Akun hanya membaca laporan barunya sendiri kecuali Super Admin. Form dijaga status akun, larangan izin modul, CSRF, validasi tanggal, batas 12 laporan per hari, idempotency key, dan audit.
+- Super Admin dapat melihat semua laporan baru, mencatat tindak lanjut, dan menulis ringkasan administratif untuk kategori mana pun **dengan identitasnya sendiri**; tidak mengatasnamakan petugas atau mengesahkan cuti/surat.
+- Akun hanya membaca laporan barunya sendiri kecuali Super Admin. Laporan yang dikembalikan berstatus Perlu Perbaikan dapat direvisi dan dikirim kembali hanya oleh pelapor aslinya; perubahan menggunakan nomor versi untuk menolak penimpaan data lama. Form dijaga status akun, larangan izin modul, CSRF, validasi tanggal, batas 12 laporan per hari, idempotency key, dan audit.
 - MFA Super Admin Tahap 13 tetap diterapkan; tidak ada reset atau perubahan password.
 
 ## Instalasi Rumahweb (tanpa SQL manual)
