@@ -53,7 +53,7 @@ function sa15_progress_status(string $s):string{return ['belum'=>'Belum','berjal
 <main class="wrap">
 <div class="heading">
 <div><small>RUANG KENDALI TERPADU</small><h1>Super Admin <em>SmartCikoko</em></h1><p>Satu layar untuk memantau dua database, laporan, pengguna, pelayanan, dan keamanan.</p></div>
-<div class="actor"><span><?=h(mb_strtoupper(mb_substr((string)$admin['name'],0,1)))?></span><div><b><?=h($admin['name'])?></b><small>MFA terverifikasi · <?=h(strtoupper($admin['source']))?></small></div></div>
+<div class="actor"><span><?=h(mb_strtoupper(mb_substr((string)$admin['name'],0,1)))?></span><div><b><?=h($admin['name'])?></b><small>Super Admin · <?=h(strtoupper($admin['source']))?></small></div></div>
 </div>
 <?php if($alert):?><div class="alert good"><?=h($alert)?></div><?php endif;?>
 <?php if($error):?><div class="alert bad"><?=h($error)?></div><?php endif;?>
@@ -147,6 +147,6 @@ function sa15_progress_status(string $s):string{return ['belum'=>'Belum','berjal
 <a href="/super-admin.php">Dashboard Versi Lama (Cadangan)</a>
 </div></details>
 </section>
-<p class="notice">**Pusat Super Admin ini tidak memindahkan data atau memberi kewenangan persetujuan resmi kepada administrator.** Rekap lama dan input baru ditampilkan terpisah; akses setiap formulir mengikuti peran akun. Seluruh transaksi tetap melewati login, MFA, CSRF, dan kontrol akses.</p>
+<p class="notice"><strong>Pusat Super Admin ini tidak memindahkan data atau memberi kewenangan persetujuan resmi kepada administrator.</strong> Rekap lama dan input baru ditampilkan terpisah; akses setiap formulir mengikuti peran akun. Seluruh transaksi tetap melewati login, MFA, CSRF, dan kontrol akses.</p>
 </main><footer><div class="wrap">© <?=date('Y')?> Kelurahan Cikoko · Pusat Kendali Terpadu</div></footer>
 </body></html>
