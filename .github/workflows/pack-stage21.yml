@@ -1,0 +1,131 @@
+name: Paket Tahap 21 Penugasan dan Pengingat
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/tasks21.php'
+      - 'portal_private/tasks21_admin_panel.php'
+      - 'portal_private/tasks21_patch.php'
+      - 'portal_private/cron_tugas21.php'
+      - 'public_html/tugas-pemeriksa21.php'
+      - 'public_html/penugasan-saya21.php'
+      - 'public_html/instal-tugas21.php'
+      - 'public_html/assets/penugasan21.css'
+      - 'public_html/assets/tasks21-admin.css'
+      - 'tests/stage21-tasks.php'
+      - '.github/workflows/pack-stage21.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage21-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql
+          tools: none
+      - name: Stage 21 PHP syntax validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/tasks21.php portal_private/tasks21_admin_panel.php portal_private/tasks21_patch.php portal_private/cron_tugas21.php public_html/tugas-pemeriksa21.php public_html/penugasan-saya21.php public_html/instal-tugas21.php; do
+            php -l "$f"
+          done
+      - name: Verify roles, stage timing, dedup, private backups and cron-only execution
+        run: php tests/stage21-tasks.php
+      - name: Lint exact patch preview of current Super Admin and staff input center
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -r 'require "portal_private/tasks21_patch.php"; file_put_contents("/tmp/stage21-admin.php",t21_patch(file_get_contents("public_html/super-admin-satu.php"),"dashboard")); file_put_contents("/tmp/stage21-center.php",t21_patch(file_get_contents("public_html/pusat-laporan.php"),"center"));'
+          php -l /tmp/stage21-admin.php
+          php -l /tmp/stage21-center.php
+      - name: Confirm default disabled schedule and no core overwrite
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          for f in ['public_html/assets/penugasan21.css','public_html/assets/tasks21-admin.css']:
+              css=Path(f).read_text()
+              assert css.count('{')==css.count('}'),f
+              assert '@media' in css,f
+          installer=Path('public_html/instal-tugas21.php').read_text()
+          tasks=Path('portal_private/tasks21.php').read_text()
+          cron=Path('portal_private/cron_tugas21.php').read_text()
+          assert 'INSERT IGNORE INTO unified_schedule21(id,enabled,updated_at) VALUES(1,0,NOW())' in installer
+          assert 'UNIQUE KEY uq_a21_once' in installer
+          assert 'enabled TINYINT(1) NOT NULL DEFAULT 0' in installer
+          assert 'm20_super_guard($admin)' in installer
+          assert "PHP_SAPI!=='cli'" in cron and '--dispatch' in cron
+          assert "GET_LOCK('smartcikoko_monitor21',2)" in tasks
+          assert 't21_identity' in tasks and 't21_qualified' in tasks
+          assert "t21_due(" in tasks and 'unified_audit' in tasks
+          assert "INSERT IGNORE INTO unified_alerts21" in tasks
+          assert 'function t21_my_tasks' in tasks
+          print('Stage21 non-invasive scheduling and security checks passed')
+          PY
+      - name: Build safe single ZIP for cPanel
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage21_pkg
+          mkdir -p stage21_pkg/portal_private stage21_pkg/public_html/assets paket
+          cp portal_private/tasks21.php portal_private/tasks21_admin_panel.php portal_private/tasks21_patch.php portal_private/cron_tugas21.php stage21_pkg/portal_private/
+          cp public_html/tugas-pemeriksa21.php public_html/penugasan-saya21.php public_html/instal-tugas21.php stage21_pkg/public_html/
+          cp public_html/assets/penugasan21.css public_html/assets/tasks21-admin.css stage21_pkg/public_html/assets/
+          cat > stage21_pkg/BACA-TAHAP21.txt <<'HELP'
+          SMARTCIKOKO TAHAP 21 - PENUGASAN DAN PENGINGAT TERJADWAL
+          1. Backup website, database Pegawai & SmartApp, konfigurasi dan kunci MFA.
+          2. Pastikan Tahap 15, 16, 17, 19 dan 20 terpasang.
+          3. Upload ZIP di /home/datd1747/ dan Extract pada direktori tersebut.
+          4. Login Super Admin dengan kode Google Authenticator.
+          5. Buka https://datawebs.my.id/instal-tugas21.php
+          6. Klik Pasang Penugasan Tahap 21. Tidak perlu SQL manual.
+          7. Dashboard https://datawebs.my.id/super-admin-satu.php#penugasan-pemeriksa
+          8. Pengaturan https://datawebs.my.id/tugas-pemeriksa21.php
+          9. Kotak tugas https://datawebs.my.id/penugasan-saya21.php
+          10. Semua penugasan dan izin penjadwal default NONAKTIF.
+          11. Uji dengan akun dummy pemeriksa dan Lurah.
+          12. Bila disetujui, cron cPanel perlu ditambahkan sendiri:
+              php /home/datd1747/portal_private/cron_tugas21.php --dispatch
+              Pastikan jalur PHP CLI sesuai versi PHP 8.4 hosting.
+              TIDAK ADA WhatsApp, SMS, email atau notifikasi eksternal.
+          13. Hapus installer dan ZIP setelah pengujian berhasil.
+          Installer menambah 3 tabel baru di SmartApp dan mencadangkan
+          halaman asli ke portal_private/tasks21_backups sebelum menyisipkan panel.
+          Tidak mengubah login, MFA, portal Beranda atau tabel Pegawai.
+          HELP
+          rm -f paket/SmartCikoko-TAHAP21-PENUGASAN-PENGINGAT.zip
+          (cd stage21_pkg && zip -q -X -r ../paket/SmartCikoko-TAHAP21-PENUGASAN-PENGINGAT.zip .)
+          unzip -t paket/SmartCikoko-TAHAP21-PENUGASAN-PENGINGAT.zip
+          for f in portal_private/tasks21.php portal_private/tasks21_admin_panel.php portal_private/tasks21_patch.php portal_private/cron_tugas21.php public_html/tugas-pemeriksa21.php public_html/penugasan-saya21.php public_html/instal-tugas21.php public_html/assets/penugasan21.css public_html/assets/tasks21-admin.css; do
+            unzip -Z1 paket/SmartCikoko-TAHAP21-PENUGASAN-PENGINGAT.zip | grep -Fxq "$f"
+          done
+          if unzip -Z1 paket/SmartCikoko-TAHAP21-PENUGASAN-PENGINGAT.zip | grep -Eq '(^|/)(index|bootstrap|auth|config|super_admin|mfa|super-admin-satu|pusat-laporan|verification19|monitor20)\.php$'; then
+            echo 'ERROR: core PHP or existing admin/verification code must not be replaced'
+            exit 1
+          fi
+      - name: Publish verified Stage21 ZIP to repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP21-PENUGASAN-PENGINGAT.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 21 reviewer assignments and notifications ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP21-PENUGASAN-PENGINGAT
+          path: paket/SmartCikoko-TAHAP21-PENUGASAN-PENGINGAT.zip
+          retention-days: 30
