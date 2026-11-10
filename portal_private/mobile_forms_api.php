@@ -152,6 +152,12 @@ function mobile_form_detail(array $actor,string $group,int $id):?array {
         'updated_at'=>(string)$item['updated_at'],
         'progress'=>sc_workflow_progress($group,(string)$item['status']),
         'review_note'=>(string)($item['review_note']??''),
+        'can_edit'=>mobile_form_allowed($actor,$group,$kind)
+            &&$item['actor_source']===$actor['source']
+            &&hash_equals((string)$item['actor_id'],(string)$actor['id'])
+            &&in_array((string)$item['status'],['draf','perbaikan'],true),
+        'can_review'=>function_exists('is_super_admin')&&is_super_admin($actor)
+            &&in_array((string)$item['status'],['diajukan','ditinjau'],true),
     ];
 }
 function mobile_form_values(mixed $raw):array {
