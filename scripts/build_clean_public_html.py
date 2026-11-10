@@ -73,7 +73,8 @@ def make_admin_unified(src: str) -> str:
     original_nav = (
         '<nav><a href="#ringkasan">Ringkasan</a><a href="#laporan">Laporan</a>'
         '<a href="#modul">Modul</a><a href="#kemajuan">Progres</a>'
-        '<a href="#pengaturan">Keamanan</a><a href="/pusat-laporan.php">Input Laporan</a></nav>'
+        '<a href="#pengaturan">Keamanan</a><a href="/cikoko-smart.php">Cikoko Smart</a>'
+        '<a href="/pusat-laporan.php">Input Laporan</a></nav>'
     )
     tabs = (
         '<nav aria-label="Menu Super Admin">'
@@ -82,6 +83,7 @@ def make_admin_unified(src: str) -> str:
         '<a data-sc-tab href="#modul">Kelola</a>'
         '<a data-sc-tab href="#kemajuan">Progres</a>'
         '<a data-sc-tab href="#pengaturan">Pengaturan</a>'
+        '<a href="/cikoko-smart.php">Cikoko Smart</a>'
         '</nav>'
     )
     src = replace_once(src, original_nav, tabs, "admin canonical nav")
