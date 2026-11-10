@@ -4,9 +4,42 @@ declare(strict_types=1);
  * Tahap 10 — lampiran aman, notifikasi dalam portal, bukti pengajuan non-resmi.
  * Tabel baru SmartApp dan berkas baru terpisah dari Tahap 8/arsip lama.
  */
+/** Exact document labels preserved from the previous Cikoko employee/waris form.
+ * Requirements may be conditional and must be verified by authorised PTSP officers.
+ * Existing generic attachment codes are retained for backwards compatibility.
+ */
+function t10_legacy_waris_requirements():array {
+    return [
+      'surat_pengantar'=>['label'=>'Surat Pengantar RT/RW','required'=>true],
+      'format_1a'=>['label'=>'Surat Permohonan untuk register (Format 1a)','required'=>true],
+      'format_1c'=>['label'=>'Surat Pernyataan (Format 1c)','required'=>true],
+      'ktp_kk_pewaris'=>['label'=>'KTP dan KK Pewaris','required'=>true],
+      'kematian_pewaris'=>['label'=>'Surat Kematian Pewaris','required'=>true],
+      'nikah_pewaris'=>['label'=>'Surat Nikah Pewaris / Akta Lahir bila belum menikah','required'=>true],
+      'akta_cerai'=>['label'=>'Akta Cerai Pewaris (bila bercerai)','required'=>false],
+      'ktp_kk_ahli'=>['label'=>'KTP dan KK seluruh Ahli Waris','required'=>true],
+      'nikah_akta_ahli'=>['label'=>'Surat Nikah (bila ada) dan Akta Lahir Ahli Waris','required'=>true],
+      'kematian_ahli'=>['label'=>'Surat Kematian Ahli Waris (jika ada yang meninggal)','required'=>false],
+      'anak_ahli'=>['label'=>'KTP, KK, Surat Nikah dan Akta Lahir anak dari Ahli Waris yang meninggal (jika berlaku)','required'=>false],
+      'belum_nikah'=>['label'=>'Pernyataan belum menikah/tidak memiliki anak (jika berlaku)','required'=>false],
+      'format_2a'=>['label'=>'Surat Pernyataan Ahli Waris (Format 2a)','required'=>true],
+      'format_3a'=>['label'=>'Lampiran Berita Acara Pengecekan Ahli Waris (Format 3a)','required'=>true],
+    ];
+}
 function t10_types(): array {
-    return ['identitas'=>'Identitas', 'keluarga'=>'Hubungan Keluarga',
-      'kematian'=>'Keterangan Kematian', 'lainnya'=>'Berkas Pendukung'];
+    $types=['identitas'=>'Identitas (arsip lama)','keluarga'=>'Hubungan Keluarga (arsip lama)',
+       'kematian'=>'Keterangan Kematian (arsip lama)','lainnya'=>'Berkas Pendukung'];
+    foreach(t10_legacy_waris_requirements() as $code=>$spec)$types[$code]=$spec['label'];
+    return $types;
+}
+function t10_requirement_status(array $files):array {
+    $existing=[];
+    foreach($files as $file)$existing[(string)($file['doc_type']??'')]=true;
+    $result=[];
+    foreach(t10_legacy_waris_requirements() as $code=>$spec)
+        $result[]=['code'=>$code,'label'=>$spec['label'],'required'=>$spec['required'],
+          'uploaded'=>isset($existing[$code])];
+    return $result;
 }
 function t10_ready():bool {
     try {
