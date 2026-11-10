@@ -204,7 +204,9 @@ function v19_detail(array $actor,string $source,int $id):?array{
        .($source==='ringkas15'?'title,body,location,activity_date,end_date':'payload_json')
        .' FROM '.$spec['table'].' WHERE id=? LIMIT 1');
     $q->execute([$id]);$r=$q->fetch(PDO::FETCH_ASSOC);
-    if(!$r || !v19_reviewer($actor,$source,(string)$r['category'])&&!v19_lurah($actor))return null;
+    // Drafts and archived reports must not be exposed by guessing an ID.
+    if(!$r || !in_array((string)$r['status'],['diajukan','ditinjau','perbaikan'],true))return null;
+    if(!v19_reviewer($actor,$source,(string)$r['category'])&&!v19_lurah($actor))return null;
     if(v19_lurah($actor)&&!v19_reviewer($actor,$source,(string)$r['category'])){
         $check=$db->prepare('SELECT state,report_version FROM unified_verification19 WHERE source_kind=? AND source_id=? LIMIT 1');
         $check->execute([$source,$id]);$c=$check->fetch(PDO::FETCH_ASSOC);
