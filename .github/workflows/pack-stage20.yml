@@ -1,0 +1,125 @@
+name: Paket Tahap 20 Monitoring dan Pengingat
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/monitor20.php'
+      - 'portal_private/monitor20_admin_panel.php'
+      - 'portal_private/monitor20_patch.php'
+      - 'public_html/monitor-laporan20.php'
+      - 'public_html/pengingat-saya20.php'
+      - 'public_html/instal-monitor20.php'
+      - 'public_html/assets/monitor20.css'
+      - 'public_html/assets/monitor20-admin.css'
+      - 'tests/stage20-monitor.php'
+      - '.github/workflows/pack-stage20.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage20-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql
+          tools: none
+      - name: Verify syntax for all stage 20 PHP files
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/monitor20.php portal_private/monitor20_admin_panel.php portal_private/monitor20_patch.php public_html/monitor-laporan20.php public_html/pengingat-saya20.php public_html/instal-monitor20.php; do
+            php -l "$f"
+          done
+      - name: Test monthly periods, monitoring thresholds, private reminders and backup patch
+        run: php tests/stage20-monitor.php
+      - name: Apply safe patch to actual repository dashboard and center for PHP lint
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -r 'require "portal_private/monitor20_patch.php"; file_put_contents("/tmp/stage20-admin.php",m20_patch(file_get_contents("public_html/super-admin-satu.php"),"dashboard")); file_put_contents("/tmp/stage20-center.php",m20_patch(file_get_contents("public_html/pusat-laporan.php"),"center"));'
+          php -l /tmp/stage20-admin.php
+          php -l /tmp/stage20-center.php
+      - name: CSS consistency and default-off reminder security
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          for f in ['public_html/assets/monitor20.css','public_html/assets/monitor20-admin.css']:
+              css=Path(f).read_text()
+              assert css.count('{')==css.count('}'),f
+              assert '@media' in css,f
+          installer=Path('public_html/instal-monitor20.php').read_text()
+          src=Path('portal_private/monitor20.php').read_text()
+          assert 'enabled TINYINT(1) NOT NULL DEFAULT 0' in installer
+          assert 'INSERT IGNORE INTO unified_monitor_rules20' in installer
+          assert "VALUES(?,3,0,NOW())" in installer
+          assert 'UNIQUE KEY uq_m20_one_reminder' in installer
+          assert 'm20_super_guard($admin)' in src
+          assert 'account_control_allowed($actor)' in src
+          assert 'INSERT IGNORE INTO unified_monitor_reminders20' in src
+          assert 'unified_audit' in src
+          assert 'function m20_monthly' in src
+          assert 'function m20_phase' in src
+          print('Stage20 CSS, rule default-off, audit and reminder dedup guards passed')
+          PY
+      - name: Build minimal safe ZIP for cPanel
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage20_pkg
+          mkdir -p stage20_pkg/portal_private stage20_pkg/public_html/assets paket
+          cp portal_private/monitor20.php portal_private/monitor20_admin_panel.php portal_private/monitor20_patch.php stage20_pkg/portal_private/
+          cp public_html/monitor-laporan20.php public_html/pengingat-saya20.php public_html/instal-monitor20.php stage20_pkg/public_html/
+          cp public_html/assets/monitor20.css public_html/assets/monitor20-admin.css stage20_pkg/public_html/assets/
+          cat > stage20_pkg/BACA-TAHAP20.txt <<'HELP'
+          SMARTCIKOKO TAHAP 20 - MONITORING BULANAN DAN PENGINGAT
+          1. Backup situs, kedua database, config privat dan kunci MFA.
+          2. Pastikan Tahap 15, 16, 17, dan 19 telah terpasang.
+          3. Upload ZIP di /home/datd1747/ lalu Extract pada direktori itu.
+          4. Login Super Admin dengan MFA.
+          5. Buka https://datawebs.my.id/instal-monitor20.php
+          6. Klik Aktifkan Monitoring Tahap 20.
+          7. Super Admin https://datawebs.my.id/super-admin-satu.php#monitor-bulanan
+          8. Monitoring https://datawebs.my.id/monitor-laporan20.php
+          9. Pengingat https://datawebs.my.id/pengingat-saya20.php
+          10. Aturan pengingat default NONAKTIF; perlu diatur dan diaktifkan.
+          11. Pengingat INTERNAL dan MANUAL, bukan email/WhatsApp otomatis.
+          12. Uji dengan akun dummy sebelum penggunaan nyata.
+          13. Setelah pengujian hapus installer dan ZIP dari hosting.
+          ZIP tidak menimpa login, MFA, database lama atau halaman utama.
+          Salinan file sebelum integrasi berada di portal_private/monitor20_backups.
+          HELP
+          rm -f paket/SmartCikoko-TAHAP20-MONITORING-PENGINGAT.zip
+          (cd stage20_pkg && zip -q -X -r ../paket/SmartCikoko-TAHAP20-MONITORING-PENGINGAT.zip .)
+          unzip -t paket/SmartCikoko-TAHAP20-MONITORING-PENGINGAT.zip
+          for f in portal_private/monitor20.php portal_private/monitor20_admin_panel.php portal_private/monitor20_patch.php public_html/monitor-laporan20.php public_html/pengingat-saya20.php public_html/instal-monitor20.php public_html/assets/monitor20.css public_html/assets/monitor20-admin.css; do
+            unzip -Z1 paket/SmartCikoko-TAHAP20-MONITORING-PENGINGAT.zip | grep -Fxq "$f"
+          done
+          if unzip -Z1 paket/SmartCikoko-TAHAP20-MONITORING-PENGINGAT.zip | grep -Eq '(^|/)(index|bootstrap|auth|config|super_admin|mfa|super-admin-satu|pusat-laporan)\.php$'; then
+            echo "ERROR: core PHP or existing dashboard must not be overwritten"
+            exit 1
+          fi
+      - name: Publish verified one-ZIP installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP20-MONITORING-PENGINGAT.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 20 monitoring and internal reminders ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP20-MONITORING-PENGINGAT
+          path: paket/SmartCikoko-TAHAP20-MONITORING-PENGINGAT.zip
+          retention-days: 30
