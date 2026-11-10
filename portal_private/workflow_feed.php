@@ -5,7 +5,7 @@ require_once __DIR__.'/workflow_progress.php';
 function sc_workflow_ready(string $table):bool {
     $allow=['unified_citizen_requests','unified_citizen_request_history',
       'unified_detailed_forms16','unified_detailed_form_history16',
-      'unified_field_reports17','unified_field_history17'];
+      'unified_field_reports17','unified_field_history17','unified_citizen_files'];
     if(!in_array($table,$allow,true))return false;
     try {
         db('smartapp')->query('SELECT 1 FROM '.$table.' LIMIT 1');
