@@ -38,7 +38,9 @@ function sc_workflow_feed(array $actor):array {
               'reference'=>$def['label'].' #'.(int)$row['id'],
               'kind'=>(string)$row['kind'],'updated_at'=>(string)$row['updated_at'],
               'created_at'=>(string)$row['created_at'],
-              'web_url'=>'/formulir-pegawai16.php',
+              'web_url'=>($def['group']==='pegawai'
+                ?'/formulir-pegawai16.php?jenis=':'/laporan-wilayah17.php?jenis=')
+                .rawurlencode((string)$row['kind']),
             ],$progress);
         }
         $q=db('smartapp')->prepare('SELECT h.'.$fk.' AS request_id,h.new_status,h.note,h.created_at,a.kind'.
