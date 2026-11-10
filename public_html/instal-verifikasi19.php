@@ -17,10 +17,11 @@ $original=is_file($dashboard)&&!is_link($dashboard)?@file_get_contents($dashboar
 $centerOriginal=is_file($center)&&!is_link($center)?@file_get_contents($center):false;
 $panelReady=is_string($original)&&str_contains($original,'SMARTCIKOKO_TAHAP19_VERIFICATION');
 $centerReady=is_string($centerOriginal)&&str_contains($centerOriginal,'SMARTCIKOKO_TAHAP19_REVIEWER_LINK');
-$ready=v19_ready();$notice='';$error='';
+$ready=v19_ready();$dependencies=v19_dependencies();$prerequisites=!in_array(false,$dependencies,true);$notice='';$error='';
 if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
     verify_csrf();
     try{
+        if(!$prerequisites)throw new RuntimeException('Pasang formulir Tahap 15–17 lebih dahulu.');
         if(!$ready){
             $db=db('smartapp');
             $db->exec("CREATE TABLE IF NOT EXISTS unified_verification19 (
@@ -89,6 +90,10 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
 <?php if($notice):?><div class="alert good"><?=h($notice)?></div><?php endif;?>
 <?php if($error):?><div class="alert error"><?=h($error)?></div><?php endif;?>
 <h2>Status Modul</h2>
+<p>Prasyarat Tahap 15–17: <strong><?=$prerequisites?'Lengkap':'Belum lengkap'?></strong></p>
+<?php foreach(['ringkas15'=>'Tahap 15','pegawai16'=>'Tahap 16','wilayah17'=>'Tahap 17'] as $key=>$label):?>
+<p><?=h($label)?>: <strong><?=!empty($dependencies[$key])?'Siap':'Perlu Pemasangan / Perbaikan Skema'?></strong></p>
+<?php endforeach;?>
 <p>Tabel verifikasi: <strong><?=$ready?'Siap':'Belum dipasang'?></strong></p>
 <p>Dashboard Super Admin: <strong><?=$panelReady?'Terhubung':'Belum terhubung'?></strong></p>
 <p>Menu Pusat Input: <strong><?=$centerReady?'Terhubung':'Opsional — belum terhubung'?></strong></p>
@@ -99,7 +104,8 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
 <p class="footnote">Hapus instal-verifikasi19.php dan ZIP setelah pengujian selesai. Jangan hapus tabel dan riwayat verifikasi.</p>
 <?php else:?>
 <p>Installer hanya menambah dua tabel di database SmartApp. Panel Super Admin dan tautan petugas ditambahkan melalui perubahan kecil yang dibackup terlebih dahulu di luar public_html.</p>
-<?php if(!is_string($original)):?><div class="alert error">Halaman super-admin-satu.php belum ditemukan. Instal Tahap 15 sebelum melanjutkan.</div>
+<?php if(!$prerequisites):?><div class="alert error">Pemasangan tidak dijalankan. Pastikan Tahap 15, 16 dan 17 sudah terpasang dengan tabel laporan berkolom version dan tabel riwayat. Tidak perlu mengimpor ulang SQL lama.</div>
+<?php elseif(!is_string($original)):?><div class="alert error">Halaman super-admin-satu.php belum ditemukan. Instal Tahap 15 sebelum melanjutkan.</div>
 <?php else:?>
 <form method="post" action="/instal-verifikasi19.php">
 <input type="hidden" name="csrf" value="<?=h(csrf())?>">
