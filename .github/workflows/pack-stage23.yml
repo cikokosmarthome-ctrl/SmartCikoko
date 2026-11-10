@@ -1,0 +1,127 @@
+name: Paket Tahap 23 Pusat Operasional
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/hub23.php'
+      - 'portal_private/hub23_patch.php'
+      - 'public_html/pusat-operasional23.php'
+      - 'public_html/instal-operasional23.php'
+      - 'public_html/assets/pusat-operasional23.css'
+      - 'tests/stage23-hub.php'
+      - '.github/workflows/pack-stage23.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage23-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,pdo_sqlite
+          tools: none
+      - name: PHP lint of all new Stage23 files
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/hub23.php portal_private/hub23_patch.php public_html/pusat-operasional23.php public_html/instal-operasional23.php; do
+            php -l "$f"
+          done
+      - name: Simulated native account status and role-aware navigation tests
+        run: php tests/stage23-hub.php
+      - name: Lint actual patched existing Super Admin and reporting center
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -r 'require "portal_private/hub23_patch.php"; file_put_contents("/tmp/stage23-admin.php",h23_patch(file_get_contents("public_html/super-admin-satu.php"),"dashboard")); file_put_contents("/tmp/stage23-center.php",h23_patch(file_get_contents("public_html/pusat-laporan.php"),"center"));'
+          php -l /tmp/stage23-admin.php
+          php -l /tmp/stage23-center.php
+      - name: Verify no core overwrite, no new database, and consistent CSS
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          css=Path('public_html/assets/pusat-operasional23.css').read_text()
+          assert css.count('{')==css.count('}')
+          assert '@media' in css
+          src=Path('portal_private/hub23.php').read_text()
+          assert 'account_control_permission_decision' in src
+          assert "actor_source=? AND actor_id=?" in src
+          assert 'h23_form16_allowed' in src and 'h23_field17_allowed' in src
+          assert 'r22_deputy_tasks' in src
+          assert 'h23_cards' in src and 'h23_filter_cards' in src
+          assert 'h23_ready' in src
+          assert "INSERT INTO" not in src and 'UPDATE ' not in src
+          patch=Path('portal_private/hub23_patch.php').read_text()
+          assert 'SMARTCIKOKO_TAHAP23_OPERATIONS_LINK' in patch
+          assert 'hash(' in patch and 'hub23_backups' in patch
+          assert 'super_admin_metrics()' in patch
+          installer=Path('public_html/instal-operasional23.php').read_text()
+          assert 'require_super_admin()' in installer
+          assert 'verify_csrf()' in installer
+          assert 'CREATE TABLE' not in installer and 'ALTER TABLE' not in installer
+          print('Stage23 no-SQL, no-core-overwrite, role-aware navigation safety guards passed')
+          PY
+      - name: Build minimal additive cPanel ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage23_pkg
+          mkdir -p stage23_pkg/portal_private stage23_pkg/public_html/assets paket
+          cp portal_private/hub23.php portal_private/hub23_patch.php stage23_pkg/portal_private/
+          cp public_html/pusat-operasional23.php public_html/instal-operasional23.php stage23_pkg/public_html/
+          cp public_html/assets/pusat-operasional23.css stage23_pkg/public_html/assets/
+          cat > stage23_pkg/BACA-TAHAP23.txt <<'HELP'
+          SMARTCIKOKO TAHAP 23 - PUSAT OPERASIONAL BERDASARKAN PERAN
+          1. Backup kedua DB, website, config privat dan kunci MFA.
+          2. Pastikan Tahap 15-22 yang digunakan sudah tersedia.
+          3. cPanel File Manager: Upload ZIP di /home/datd1747/
+          4. Extract ZIP pada direktori tersebut, BUKAN dalam public_html.
+          5. Login Super Admin dengan Google Authenticator.
+          6. Buka https://datawebs.my.id/instal-operasional23.php
+          7. Klik Hubungkan Pusat Operasional; tidak perlu SQL manual.
+          8. Halaman: https://datawebs.my.id/pusat-operasional23.php
+          9. Satu tautan ditambahkan ke Super Admin dan Pusat Laporan.
+          10. Uji akun dummy: warga, RT/RW, PPPK, PJLP, PTSP, Lurah,
+              Super Admin; pastikan menu hanya sesuai izin.
+          11. Hapus installer dan ZIP hosting setelah berhasil.
+          PAKET TIDAK MENIMPA: index.php, auth.php, mfa.php, bootstrap.php,
+          verification19.php, pusat-laporan.php, super-admin-satu.php.
+          TIDAK membuat tabel baru atau mengubah database lama.
+          Backup halaman asli: portal_private/hub23_backups/
+          Modul yang tidak siap ditandai; tautan tidak menambah izin.
+          HELP
+          rm -f paket/SmartCikoko-TAHAP23-PUSAT-OPERASIONAL.zip
+          (cd stage23_pkg && zip -q -X -r ../paket/SmartCikoko-TAHAP23-PUSAT-OPERASIONAL.zip .)
+          unzip -t paket/SmartCikoko-TAHAP23-PUSAT-OPERASIONAL.zip
+          for f in portal_private/hub23.php portal_private/hub23_patch.php public_html/pusat-operasional23.php public_html/instal-operasional23.php public_html/assets/pusat-operasional23.css; do
+            unzip -Z1 paket/SmartCikoko-TAHAP23-PUSAT-OPERASIONAL.zip | grep -Fxq "$f"
+          done
+          if unzip -Z1 paket/SmartCikoko-TAHAP23-PUSAT-OPERASIONAL.zip | grep -Eq '(^|/)(index|bootstrap|auth|config|super_admin|mfa|super-admin-satu|pusat-laporan|verification19|review22|tasks21)\.php$'; then
+            echo 'ERROR: existing critical PHP file inside additive package'
+            exit 1
+          fi
+      - name: Publish tested ZIP to GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP23-PUSAT-OPERASIONAL.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage23 role-aware operations hub ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP23-PUSAT-OPERASIONAL
+          path: paket/SmartCikoko-TAHAP23-PUSAT-OPERASIONAL.zip
+          retention-days: 30
