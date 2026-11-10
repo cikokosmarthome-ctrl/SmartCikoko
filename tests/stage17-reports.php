@@ -82,4 +82,31 @@ try{
  @rmdir($private.'/wilayah17_backups');
  @unlink($web.'/super-admin-satu.php');@rmdir($web);@rmdir($private);@rmdir($root);
 }
+
+$centerFixture="<?php\n".str_repeat("/* unused old portal html */ ",230)
+    ."?>\n<!doctype html><html><head>"
+    .'<link rel="stylesheet" href="/assets/pusat-laporan.css"></head><body>'
+    .'<main><div class="category-grid">existing content</div></main></body></html>';
+$linked=w17_center_patch($centerFixture);
+test17(w17_center_ready($linked),'Staff intake hub receives Stage-17 form link');
+test17(w17_center_patch($linked)===$linked,'Staff hub integration idempotent');
+test17(str_contains($linked,'class="category-grid"'),'Existing categories remain');
+$rejected=false;try{w17_center_patch('<body>non-compatible center</body>');}
+catch(RuntimeException $e){$rejected=true;}
+test17($rejected,'Unknown staff hub rejected safely');
+$root=sys_get_temp_dir().'/cikoko-stage17-center-'.bin2hex(random_bytes(5));
+$web=$root.'/public_html';$private=$root.'/portal_private';
+mkdir($root,0700);mkdir($web,0700);mkdir($private,0700);
+file_put_contents($web.'/pusat-laporan.php',$centerFixture);
+try{
+ $backup=w17_center_apply($web.'/pusat-laporan.php',$private,hash('sha256',$centerFixture));
+ test17(is_file($private.'/wilayah17_backups/'.$backup),'Staff center backed up privately');
+ test17(file_get_contents($private.'/wilayah17_backups/'.$backup)===$centerFixture,'Original staff report page preserved');
+ test17(file_get_contents($web.'/pusat-laporan.php')===$linked,'Staff hub link is scoped and safely applied');
+}finally{
+ foreach(glob($private.'/wilayah17_backups/*')?:[] as $file)@unlink($file);
+ @rmdir($private.'/wilayah17_backups');@unlink($web.'/pusat-laporan.php');
+ @rmdir($web);@rmdir($private);@rmdir($root);
+}
+
 echo "Stage 17: permissions, structured field validation and safe dashboard patch tests passed.\n";
