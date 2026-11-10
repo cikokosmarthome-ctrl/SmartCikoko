@@ -59,3 +59,12 @@ Semua akses data dan keputusan otorisasi dilakukan **di server**. Pengujian jang
 - Tombol Google Sign-In, push notification, GPS, unggahan kamera, penyusunan surat resmi, dan persetujuan cuti **tidak diklaim aktif**; tidak ada tombol palsu untuk fitur tersebut.
 - Source Android/iOS sama, namun kompatibilitas perangkat, hasil Apple build, keystore Android, store publishing, dan akurasi pixel-per-pixel belum terbukti 100% sebelum UAT.
 - Aplikasi Flutter tidak mengganti PHP/MySQL; tetap memakai backend SmartCikoko.
+
+## Status UAT dan pipeline terpisah (10 November 2026)
+
+- **Android:** build debug untuk pengujian internal, `flutter analyze`, dan widget tests berhasil pada job Android. APK dan source ZIP tersedia pada [GitHub prerelease SmartCikoko Mobile UAT](https://github.com/cikokosmarthome-ctrl/SmartCikoko/releases/tag/smartcikoko-mobile-uat-v1).
+- **iOS:** struktur proyek iOS berada dalam source ZIP, tetapi belum ada IPA siap pasang atau bukti tanda tangan Apple. Kompilasi tanpa signing tersedia pada workflow terpisah `Flutter SmartCikoko iOS UAT (manual)` di tab Actions, memerlukan runner macOS tersedia.
+- **Alasan pemisahan:** job iOS sebelumnya dibatalkan sehingga workflow gabungan berstatus gagal walaupun job Android sukses. Pipeline Android dipisahkan agar kegagalan antrean macOS tidak membatalkan atau salah menandai proses Android.
+- **Pengujian aplikasi:** pada perangkat Android UAT, periksa login, pilihan akun ganda, MFA, berita, agenda, daftar formulir, simpan draf, pengiriman, riwayat, logout serta kondisi internet terputus. Jangan pakai data warga asli.
+- **Server:** sebelum uji formulir, deploy V4 beserta `portal_private/mobile_forms_api.php`; bila API tidak tersedia tombol *Coba lagi* akan memuat ulang data, bukan membuat data contoh.
+- APK ini **debug internal**, belum ditandatangani untuk produksi dan belum siap dipublikasikan ke Play Store/App Store. Rilis produksi memerlukan verifikasi instalasi perangkat, identitas aplikasi/logo resmi, kebijakan privasi, signing, dan pengujian backend produksi.

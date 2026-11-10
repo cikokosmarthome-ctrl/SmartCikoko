@@ -24,7 +24,7 @@ EXCLUDED_CSS_EXACT = {
     "beranda-fix.css",
 }
 THEME = '<link rel="stylesheet" href="/assets/ui-modern.css?v=20261110">'
-PUBLIC_THEME = '<link rel="stylesheet" href="/assets/portal-mockup.css?v=20261110a">'
+PUBLIC_THEME = '<link rel="stylesheet" href="/assets/portal-mockup.css?v=20261110b">'
 SHELL = '<script src="/assets/ui-modern.js?v=20261110" defer></script>'
 ADMIN_SCRIPT = '<script src="/assets/admin-modern.js?v=20261110" defer></script>'
 ADMIN_TABS = ("ringkasan", "laporan", "modul", "kemajuan", "pengaturan", "sc-admin-workspace")

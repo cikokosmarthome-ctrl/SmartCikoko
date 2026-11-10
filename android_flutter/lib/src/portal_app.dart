@@ -42,9 +42,9 @@ class _PortalShellState extends State<PortalShell> {
   }
 
   Future<void> restore() async {
-    final saved = await _storage.read(key: _storageKey);
-    if (saved != null) {
-      try {
+    try {
+      final saved = await _storage.read(key: _storageKey);
+      if (saved != null) {
         final account = await PortalApi.call('me', token: saved);
         if (!mounted) return;
         setState(() {
@@ -52,11 +52,18 @@ class _PortalShellState extends State<PortalShell> {
           user = Map<String, dynamic>.from(account['user'] as Map);
           permissions = Map<String, dynamic>.from(account['permissions'] as Map? ?? {});
         });
-      } catch (_) {
-        await _storage.delete(key: _storageKey);
       }
+    } catch (_) {
+      // An expired session or unavailable secure storage must never trap
+      // the user indefinitely on the splash spinner.
+      try {
+        await _storage.delete(key: _storageKey);
+      } catch (_) {
+        // Storage is unavailable; continue without authentication.
+      }
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
-    if (mounted) setState(() => loading = false);
   }
 
   Future<void> signIn(String newToken) async {
@@ -460,7 +467,9 @@ class PublicNewsPreview extends StatefulWidget {
 }
 
 class _PublicNewsPreviewState extends State<PublicNewsPreview> {
-  late final Future<Map<String, dynamic>> posts;
+  late Future<Map<String, dynamic>> posts;
+
+  void retry() => setState(() => posts = PortalApi.call('posts'));
   @override
   void initState() {
     super.initState();
@@ -473,7 +482,16 @@ class _PublicNewsPreviewState extends State<PublicNewsPreview> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             if (snapshot.hasError) {
-              return const CivicEmpty('Informasi terbaru belum dapat dimuat.');
+              return Column(
+                children: [
+                  const CivicEmpty('Informasi terbaru belum dapat dimuat.'),
+                  TextButton.icon(
+                    onPressed: retry,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Coba lagi'),
+                  ),
+                ],
+              );
             }
             return const LinearProgressIndicator();
           }
@@ -528,6 +546,9 @@ class NewsPage extends StatefulWidget {
 }
 class _NewsPageState extends State<NewsPage> {
   late Future<Map<String, dynamic>> future;
+
+  void retry() => setState(
+      () => future = PortalApi.call(widget.events ? 'events' : 'posts'));
   @override
   void initState() {
     super.initState();
@@ -540,7 +561,19 @@ class _NewsPageState extends State<NewsPage> {
           future: future,
           builder: (context, snap) {
             if (snap.hasError) {
-              return CivicEmpty('Data belum tersedia: ' + snap.error.toString());
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CivicEmpty('Data belum tersedia: ' + snap.error.toString()),
+                    TextButton.icon(
+                      onPressed: retry,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Muat ulang'),
+                    ),
+                  ],
+                ),
+              );
             }
             if (!snap.hasData) {
               return const Center(child: CircularProgressIndicator());
