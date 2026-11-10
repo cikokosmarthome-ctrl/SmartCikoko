@@ -4,6 +4,9 @@ declare(strict_types=1);
 function account_control_allowed(array $actor):bool {
     return ($actor['active']??true)===true;
 }
+function is_super_admin(array $actor):bool {
+    return ($actor['source']??'')==='pegawai'&&($actor['role']??'')==='superadmin';
+}
 require dirname(__DIR__).'/portal_private/mobile_forms_api.php';
 function check_mobile(bool $ok,string $label):void {
     if(!$ok){fwrite(STDERR,'FAILED: '.$label."\n");exit(1);}
@@ -22,6 +25,17 @@ check_mobile(mobile_form_allowed($rt,'wilayah','rt_rw'),'RT access their reporti
 check_mobile(!mobile_form_allowed($rt,'pegawai','pppk'),'RT cannot access PPPK');
 check_mobile(mobile_form_allowed($warga,'wilayah','jumantik'),'Resident aggregate observation only via native validation');
 check_mobile(!mobile_form_allowed($admin,'pegawai','pppk'),'Admin cannot create PPPK submissions by impersonation');
+check_mobile(mobile_form_view_allowed($admin,'pegawai','pppk'),'Admin may inspect staff form without impersonating');
+check_mobile(mobile_form_view_allowed($admin,'wilayah','rt_rw'),'Admin may inspect wilayah submissions');
+check_mobile(mobile_form_allowed($warga,'laporan','umum'),'Citizen may send a general Stage 15 report');
+check_mobile(!mobile_form_allowed($warga,'laporan','pppk'),'Citizen may not enter PPPK reports');
+check_mobile(!mobile_form_allowed($rt,'laporan','pppk'),'RT may not impersonate PPPK in Stage 15');
+check_mobile(!mobile_form_allowed($pppk,'wilayah','fkdm'),'PPPK may not impersonate FKDM');
+check_mobile(mobile_form_group('laporan')===null,'Stage 15 mobile category enabled');
+$badReview=false;
+try{mobile_form_review($warga,'laporan',1,'ditutup','');}
+catch(RuntimeException $e){$badReview=true;}
+check_mobile($badReview,'Only authorized Super Admin can review via mobile API');
 $catalog=mobile_form_catalog($pppk);
 $keys=array_column($catalog,'kind');
 check_mobile(in_array('pppk',$keys,true)&&in_array('cuti',$keys,true),'PPPK only sees authorized catalog');
