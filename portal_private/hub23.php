@@ -147,18 +147,27 @@ function h23_filter_cards(array $cards,string $query,string $group=''):array {
         return $query===''||mb_stripos($c['label'].' '.$c['description'].' '.$c['stage'],$query)!==false;
     }));
 }
+/**
+ * Stage 24: numeric-looking PHP array keys are cast to int even if authored as
+ * '15', '16', '17'. With strict_types=1, h23_ready(string) rejects those int
+ * keys. Always normalize the module key BEFORE calling the readiness check.
+ * Each source is independently guarded so one database issue cannot blank
+ * otherwise valid counts. Never treat a missing source as zero reports.
+ */
 function h23_counts(array $actor):array {
     $super=h23_admin($actor);
     $totals=['draf'=>0,'aktif'=>0,'perbaikan'=>0,'selesai'=>0];
-    $missing=[];$available=0;
+    $missing=[];$available=0;$byStage=[];
     $tables=[
         '15'=>'unified_report_intake',
         '16'=>'unified_detailed_forms16',
         '17'=>'unified_field_reports17',
     ];
     foreach($tables as $stage=>$table){
-        if(!h23_ready($stage)){$missing[]=$stage;continue;}
+        $key=(string)$stage;
+        $byStage[$key]=['ready'=>false,'total'=>null];
         try{
+            if(!h23_ready($key)){$missing[]=$key;continue;}
             $sql='SELECT status,COUNT(*) AS total FROM '.$table;
             $args=[];
             if(!$super){
@@ -167,17 +176,26 @@ function h23_counts(array $actor):array {
             }
             $sql.=' GROUP BY status';
             $q=db('smartapp')->prepare($sql);$q->execute($args);
-            ++$available;
+            $stageTotal=0;
+            $stageTotals=['draf'=>0,'aktif'=>0,'perbaikan'=>0,'selesai'=>0];
             foreach($q->fetchAll(PDO::FETCH_ASSOC) as $r){
-                $s=(string)$r['status'];$n=(int)$r['total'];
-                if($s==='draf')$totals['draf']+=$n;
-                elseif(in_array($s,['diajukan','ditinjau'],true))$totals['aktif']+=$n;
-                elseif($s==='perbaikan')$totals['perbaikan']+=$n;
-                elseif($s==='ditutup')$totals['selesai']+=$n;
+                $status=(string)$r['status'];$n=(int)$r['total'];
+                if($status==='draf')$stageTotals['draf']+=$n;
+                elseif(in_array($status,['diajukan','ditinjau'],true))$stageTotals['aktif']+=$n;
+                elseif($status==='perbaikan')$stageTotals['perbaikan']+=$n;
+                elseif($status==='ditutup')$stageTotals['selesai']+=$n;
+                $stageTotal+=$n;
             }
-        }catch(Throwable $e){$missing[]=$stage;error_log('Stage23 aggregate unavailable: '.$stage);}
+            foreach($stageTotals as $status=>$n)$totals[$status]+=$n;
+            $byStage[$key]=['ready'=>true,'total'=>$stageTotal];
+            ++$available;
+        }catch(Throwable $e){
+            $missing[]=$key;
+            error_log('Stage24 aggregate unavailable: stage '.$key.' ('.get_class($e).')');
+        }
     }
-    return ['totals'=>$totals,'available'=>$available,'missing'=>$missing,'scope'=>$super?'semua laporan':'laporan akun ini'];
+    return ['totals'=>$totals,'available'=>$available,'missing'=>$missing,
+        'by_stage'=>$byStage,'scope'=>$super?'semua laporan':'laporan akun ini'];
 }
 function h23_tasks(array $actor,int $limit=8):array {
     if(!h23_role_reviewer($actor))return ['rows'=>[],'incomplete'=>false];
@@ -264,6 +282,7 @@ function h23_overview(array $actor):array {
     $counts=h23_guarded('ringkasan laporan',static fn()=>h23_counts($actor),
         ['totals'=>['draf'=>0,'aktif'=>0,'perbaikan'=>0,'selesai'=>0],
          'available'=>0,'missing'=>['15','16','17'],
+         'by_stage'=>['15'=>['ready'=>false,'total'=>null], '16'=>['ready'=>false,'total'=>null], '17'=>['ready'=>false,'total'=>null]],
          'scope'=>$admin?'semua laporan':'laporan akun ini'],$warnings);
     $tasks=h23_guarded('tugas pemeriksa',static fn()=>h23_tasks($actor,8),
         ['rows'=>[],'incomplete'=>true],$warnings);
