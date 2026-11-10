@@ -82,7 +82,7 @@ assert 'a(\'pjlp\'' in index
 assert 'a(\'waris\'' in index
 assert 'login_matches' in index
 assert 'waris_change_status' in index
-assert '/assets/portal-mockup.css?v=20261110a' in index
+assert '/assets/portal-mockup.css?v=20261110b' in index
 assert 'aria-labelledby="home-title"' in index
 assert 'class="hero-art"' in index
 assert 'cikoko-office-illustration.svg' in index
