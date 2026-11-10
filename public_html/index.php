@@ -57,7 +57,7 @@ function date_text(?string $s):string{return $s&&strtotime($s)?date('d M Y',strt
 <meta name="description" content="Portal informasi, pelayanan masyarakat dan administrasi terpadu Kelurahan Cikoko, Kecamatan Pancoran, Jakarta Selatan.">
 <title><?=h(ucwords(str_replace('-',' ',$page)))?> | Kelurahan Cikoko</title>
 <link rel="stylesheet" href="/assets/style.css">
-<link rel="stylesheet" href="/assets/portal-mockup.css?v=20261110a"></head>
+<link rel="stylesheet" href="/assets/portal-mockup.css?v=20261110b"></head>
 <body class="sc-body sc-page-index">
 <div class="gov-ribbon"><div class="container gov-inner"><span>PEMERINTAH PROVINSI DKI JAKARTA</span><span>KECAMATAN PANCORAN · JAKARTA SELATAN</span></div></div>
 <header class="header modern-public-header">
@@ -67,7 +67,7 @@ function date_text(?string $s):string{return $s&&strtotime($s)?date('d M Y',strt
     <span><strong>KELURAHAN CIKOKO</strong><small>Kecamatan Pancoran · Jakarta Selatan</small></span>
   </a>
   <nav aria-label="Navigasi publik">
-    <?php a('beranda','Beranda',$page);a('berita','Informasi',$page);a('agenda','Agenda',$page);
+    <?php a('beranda','Beranda',$page);echo '<a href="/#profil">Profil</a><a href="/#layanan">Layanan</a>';a('berita','Informasi',$page);a('agenda','Agenda',$page);echo '<a href="/#galeri">Galeri</a><a href="/#kontak">Kontak</a>';
     if($u){
         if(function_exists('is_super_admin')&&is_super_admin($u)){
             echo '<a href="/super-admin-satu.php">Admin</a>';
@@ -124,6 +124,25 @@ try{$posts=public_posts(3);$events=public_events(3);}catch(Throwable $e){$posts=
 <div class="cards"><?php foreach($posts as $p):?><a class="service" href="<?=h(url('berita'))?>"><span class="news-visual news-community" aria-hidden="true">INFORMASI PUBLIK</span><span class="tag">BERITA</span><strong><?=h($p['title'])?></strong><p><?=h($p['summary'])?></p><span><?=h(date_text($p['published_at']))?></span></a><?php endforeach;?>
 <?php foreach($events as $e):?><a class="service" href="<?=h(url('agenda'))?>"><span class="news-visual news-agenda" aria-hidden="true">AGENDA KELURAHAN</span><span class="tag">AGENDA</span><strong><?=h($e['title'])?></strong><p><?=h($e['location'])?></p><span><?=h(date_text($e['starts_at']))?></span></a><?php endforeach;?>
 <?php if(!$posts&&!$events):?><p>Belum terdapat publikasi atau agenda terbaru.</p><?php endif;?></div></div></section>
+<section id="profil" class="container section public-profile" aria-labelledby="profile-title">
+  <div class="section-top"><span class="eyebrow dark">PROFIL WILAYAH</span><h2 id="profile-title">Sekilas Kelurahan Cikoko</h2><p>Bagian dari Kecamatan Pancoran, Kota Administrasi Jakarta Selatan.</p></div>
+  <div class="public-info-grid">
+    <article class="public-info-card"><span class="public-info-symbol" aria-hidden="true">⌂</span><h3>Pelayanan Kelurahan</h3><p>Akses informasi administrasi dan layanan warga sesuai kewenangan melalui portal digital.</p></article>
+    <article class="public-info-card"><span class="public-info-symbol" aria-hidden="true">◈</span><h3>Transparansi Informasi</h3><p>Berita dan agenda dipublikasikan berdasarkan informasi yang tersedia pada sistem.</p></article>
+    <article class="public-info-card"><span class="public-info-symbol" aria-hidden="true">▤</span><h3>Ruang Kerja Aparatur</h3><p>Formulir dan laporan pegawai diakses menggunakan akun serta hak akses yang berlaku.</p></article>
+  </div>
+</section>
+<section id="galeri" class="soft public-gallery" aria-labelledby="gallery-title"><div class="container section">
+  <div class="section-top"><span class="eyebrow dark">GALERI DIGITAL</span><h2 id="gallery-title">Ruang Informasi Visual</h2><p>Dokumentasi kegiatan resmi dapat ditambahkan setelah tersedia dan terverifikasi.</p></div>
+  <div class="public-gallery-card">
+    <img src="/assets/cikoko-office-illustration.svg" alt="Ilustrasi grafis pelayanan Kelurahan Cikoko, bukan foto dokumentasi kegiatan" width="900" height="590" loading="lazy">
+    <div><strong>Ilustrasi Portal Pelayanan</strong><p>Gambar ilustratif untuk memperkenalkan layanan digital. Belum mewakili dokumentasi foto kegiatan.</p><a href="<?=h(url('berita'))?>">Lihat Informasi Kelurahan →</a></div>
+  </div>
+</div></section>
+<section id="kontak" class="container section public-contact" aria-labelledby="contact-title">
+  <div><span class="eyebrow dark">AKSES LAYANAN</span><h2 id="contact-title">Terhubung dengan Kelurahan Cikoko</h2><p>Kelurahan Cikoko, Kecamatan Pancoran, Kota Administrasi Jakarta Selatan. Masuk menggunakan akun terdaftar untuk mengakses layanan digital yang tersedia.</p></div>
+  <a class="btn primary" href="<?=h(url($u?'dashboard':'login'))?>"><?=$u?'Buka Ruang Kerja':'Masuk Portal Layanan'?> →</a>
+</section>
 <?php else:?>
 <section class="banner"><div class="container"><span class="eyebrow">PORTAL TERPADU KELURAHAN CIKOKO</span><h1><?=h(match($page){
  'login'=>'Akses Portal Terpadu','dashboard'=>'Ruang Kerja Terpadu','pegawai'=>'Administrasi Pegawai',
