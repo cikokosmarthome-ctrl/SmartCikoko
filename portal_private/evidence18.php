@@ -60,6 +60,8 @@ function e18_report(array $actor,string $source,int $reportId,bool $lock=false):
     }
     if($source==='pegawai16'&&!in_array((string)$row['kind'],['pppk','pjlp'],true))
         throw new RuntimeException('Bukti cuti dan dokumen warga tidak diizinkan.');
+    if($source==='wilayah17'&&(string)$row['kind']==='jumantik')
+        throw new RuntimeException('Foto jentik/rumah tangga belum didukung demi perlindungan data kesehatan.');
     return $row;
 }
 function e18_filename_valid(string $name):bool {
