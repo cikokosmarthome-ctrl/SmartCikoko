@@ -61,7 +61,7 @@ function w17_href(string $kind,int $page=1):string {
 <div class="top-strip"><div class="wrap">PEMERINTAH PROVINSI DKI JAKARTA <span>KECAMATAN PANCORAN · KELURAHAN CIKOKO</span></div></div>
 <header class="nav"><div class="wrap nav-inner">
 <a class="brand" href="/"><span class="brand-mark">KC</span><span><strong>KELURAHAN CIKOKO</strong><small>Pusat Pelayanan dan Laporan Terpadu</small></span></a>
-<nav><a href="/?page=dashboard">Ruang Kerja</a><a href="/pusat-laporan.php">Pusat Laporan</a>
+<nav><a href="/?page=dashboard">Ruang Kerja</a><a href="/pusat-laporan.php">Pusat Laporan</a><a href="/aktivitas-terpadu.php">Notifikasi &amp; Progres</a>
 <?php if($manager):?><a href="/super-admin-satu.php#laporan-wilayah">Super Admin Ringkas</a><?php endif;?></nav></div></header>
 <div class="hero"><div class="wrap hero-inner">
 <div><small>TAHAP 17 · KEWILAYAHAN DAN KESEHATAN</small><h1>Input Laporan Lapangan Terstruktur</h1>
