@@ -53,6 +53,14 @@ Menu yang tersedia tetap dapat dibuka sesuai hak akun. Silakan laporkan bagian i
 <div class="metric"><small>Perlu Perbaikan</small><strong><?=$data['counts']['available']?(int)$metrics['perbaikan']:'—'?></strong><span>Menunggu koreksi</span></div>
 <div class="metric"><small>Selesai Administrasi</small><strong><?=$data['counts']['available']?(int)$metrics['selesai']:'—'?></strong><span>Ditutup</span></div>
 </section>
+<div class="alert subtle">
+<strong>Rincian sumber laporan:</strong>
+<?php foreach(['15'=>'Ringkas','16'=>'Pegawai','17'=>'Wilayah'] as $st=>$label):
+$info=$data['counts']['by_stage'][$st]??['ready'=>false,'total'=>null];?>
+<span style="margin-left:14px;display:inline-block">Tahap <?=h($st)?> · <?=h($label)?>:
+<strong><?=$info['ready']?number_format((int)$info['total'],0,',','.'): 'belum terbaca'?></strong></span>
+<?php endforeach;?>
+</div>
 <?php if($data['counts']['missing']):?>
 <div class="alert warning">Data status belum lengkap dari Tahap <?=h(implode(', ',array_unique($data['counts']['missing'])))?>. Modul lain tetap dapat dibuka sesuai izin; tanda “0” tidak boleh dianggap sebagai tidak ada laporan ketika sumber belum tersedia.</div>
 <?php endif;?>
