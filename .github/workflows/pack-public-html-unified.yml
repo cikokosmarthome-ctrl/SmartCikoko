@@ -1,0 +1,104 @@
+name: PUBLIC_HTML BARU — SmartCikoko Unified
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/build_clean_public_html.py'
+      - 'tests/clean-webroot.py'
+      - 'public_html/assets/ui-modern.css'
+      - 'public_html/assets/ui-modern.js'
+      - 'public_html/assets/admin-modern.js'
+      - 'docs/PUBLIC-HTML-BARU-UNIFIED.md'
+      - '.github/workflows/pack-public-html-unified.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-unified-clean-root
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,pdo_sqlite
+          tools: none
+      - name: Build safe public_html_baru without touching current website
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build_clean_public_html.py --output _webroot_replacement
+          cp docs/PUBLIC-HTML-BARU-UNIFIED.md _webroot_replacement/BACA-SEBELUM-GANTI.txt
+      - name: Verify all active routes, one admin and sticky header/bottom footer
+        run: python3 tests/clean-webroot.py _webroot_replacement
+      - name: PHP lint for EVERY generated webroot PHP file
+        shell: bash
+        run: |
+          set -euo pipefail
+          find _webroot_replacement/public_html_baru -type f -name '*.php' -print0 |
+            xargs -0 -r -n1 php -l
+      - name: JavaScript syntax for same-origin admin tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check _webroot_replacement/public_html_baru/assets/ui-modern.js
+          node --check _webroot_replacement/public_html_baru/assets/admin-modern.js
+      - name: Regression tests of real report intake, form auth and operational dashboard
+        shell: bash
+        run: |
+          set -euo pipefail
+          php tests/stage16-forms.php
+          php tests/stage23-hub.php
+          php tests/compact-ui.php
+          php tests/stage25-operational.php
+      - name: Package complete clean root in a separate staging folder
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p paket
+          rm -f paket/SmartCikoko-PUBLIC-HTML-BARU-UNIFIED.zip
+          (cd _webroot_replacement &&
+            zip -q -X -r ../paket/SmartCikoko-PUBLIC-HTML-BARU-UNIFIED.zip
+              public_html_baru BACA-SEBELUM-GANTI.txt MANIFEST-DEPLOY.json)
+          unzip -t paket/SmartCikoko-PUBLIC-HTML-BARU-UNIFIED.zip
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+          archive=Path('paket/SmartCikoko-PUBLIC-HTML-BARU-UNIFIED.zip')
+          with zipfile.ZipFile(archive) as z:
+              names={x for x in z.namelist() if not x.endswith('/')}
+              assert 'public_html_baru/index.php' in names
+              assert 'public_html_baru/.htaccess' in names
+              assert 'public_html_baru/api/index.php' in names
+              assert 'public_html_baru/super-admin-satu.php' in names
+              assert 'public_html_baru/assets/ui-modern.css' in names
+              assert 'public_html_baru/assets/admin-modern.js' in names
+              assert 'MANIFEST-DEPLOY.json' in names
+              assert 'BACA-SEBELUM-GANTI.txt' in names
+              assert not any(x.startswith('public_html/') for x in names)
+              assert not any(x.startswith('portal_private/') for x in names)
+              assert not any('/instal-' in x or '/perbaiki-' in x for x in names)
+              assert len(names)>=65,len(names)
+          print('ZIP deploys ONLY to public_html_baru, never overwrites current live webroot')
+          PY
+          du -h paket/SmartCikoko-PUBLIC-HTML-BARU-UNIFIED.zip
+      - name: Publish verified complete staging ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-PUBLIC-HTML-BARU-UNIFIED.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Release full SmartCikoko unified clean public_html staging ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-PUBLIC-HTML-BARU-UNIFIED
+          path: paket/SmartCikoko-PUBLIC-HTML-BARU-UNIFIED.zip
+          retention-days: 30
