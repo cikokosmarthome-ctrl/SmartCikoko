@@ -42,6 +42,10 @@ $metrics=$data['counts']['totals'];
 <section class="heading"><div><small>TAHAP 23 · SATU TITIK AKSES OPERASIONAL</small>
 <h1>Pusat Operasional <em>SmartCikoko</em></h1><p>Semua pekerjaan yang tersedia untuk akun Anda, dalam satu tampilan yang ringkas. Pilih modul, lanjutkan tugas, atau lihat status laporan tanpa berpindah-pindah menu terlebih dahulu.</p></div>
 <div class="actor"><span><?=h(mb_strtoupper(mb_substr($first,0,1)))?></span><div><b><?=h($first)?></b><small><?=h(role_label((string)$user['role']))?> · <?=h(strtoupper((string)$user['source']))?></small></div></div></section>
+<?php if(!empty($data['warnings'])):?><div class="alert warning">
+<strong>Informasi sebagian belum termuat:</strong> <?=h(implode(', ',$data['warnings']))?>.
+Menu yang tersedia tetap dapat dibuka sesuai hak akun. Silakan laporkan bagian ini kepada pengelola; sistem tidak menampilkan data privat atau pesan kesalahan teknis.
+</div><?php endif;?>
 <div class="alert subtle">Akun: <strong><?=h($data['counts']['scope'])?></strong> · Angka berikut adalah status administrasi pada formulir tambahan Tahap 15–17, bukan persetujuan cuti, penerbitan surat, atau penilaian resmi.</div>
 <section class="metrics" aria-label="Ringkasan administratif">
 <div class="metric"><small>Draf</small><strong><?=$data['counts']['available']?(int)$metrics['draf']:'—'?></strong><span>Belum dikirim</span></div>
