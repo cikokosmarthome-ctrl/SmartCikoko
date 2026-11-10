@@ -1,0 +1,118 @@
+name: Paket Tahap 19 Verifikasi Berjenjang
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/verification19.php'
+      - 'portal_private/verification19_admin_panel.php'
+      - 'portal_private/verification19_patch.php'
+      - 'public_html/verifikasi-laporan19.php'
+      - 'public_html/instal-verifikasi19.php'
+      - 'public_html/assets/verifikasi19.css'
+      - 'public_html/assets/verifikasi19-admin.css'
+      - 'tests/stage19-verification.php'
+      - '.github/workflows/pack-stage19.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage19-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql
+          tools: none
+      - name: PHP lint
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/verification19.php portal_private/verification19_admin_panel.php portal_private/verification19_patch.php public_html/verifikasi-laporan19.php public_html/instal-verifikasi19.php; do
+            php -l "$f"
+          done
+      - name: Role boundaries, double-actor verification and backup tests
+        run: php tests/stage19-verification.php
+      - name: Patch current Super Admin and Center source, then lint generated PHP
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -r 'require "portal_private/verification19_patch.php"; file_put_contents("/tmp/stage19-admin.php",v19_patch(file_get_contents("public_html/super-admin-satu.php"),"dashboard")); file_put_contents("/tmp/stage19-center.php",v19_patch(file_get_contents("public_html/pusat-laporan.php"),"center"));'
+          php -l /tmp/stage19-admin.php
+          php -l /tmp/stage19-center.php
+      - name: Validate CSS and administrative-not-official workflow restrictions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          for f in ['public_html/assets/verifikasi19.css','public_html/assets/verifikasi19-admin.css']:
+              css=Path(f).read_text()
+              assert css.count('{')==css.count('}'),f
+              assert '@media' in css,f
+          php=Path('portal_private/verification19.php').read_text()
+          assert "&&$state==='menunggu'" in php
+          assert "&&$state!=='lolos_periksa'" in php
+          assert 'FOR UPDATE' in php
+          assert "unified_verification_history19" in php
+          assert "v19_write_original_correction" in php
+          assert "account_control_allowed" in php
+          assert 'is_super_admin' in php
+          print('Stage19 role, audit and admin-only workflow checks passed')
+          PY
+      - name: Prepare additive cPanel archive without touching MFA or native tables
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage19_pkg
+          mkdir -p stage19_pkg/portal_private stage19_pkg/public_html/assets paket
+          cp portal_private/verification19.php portal_private/verification19_admin_panel.php portal_private/verification19_patch.php stage19_pkg/portal_private/
+          cp public_html/verifikasi-laporan19.php public_html/instal-verifikasi19.php stage19_pkg/public_html/
+          cp public_html/assets/verifikasi19.css public_html/assets/verifikasi19-admin.css stage19_pkg/public_html/assets/
+          cat > stage19_pkg/BACA-TAHAP19.txt <<'HELP'
+          SMARTCIKOKO TAHAP 19 - VERIFIKASI LAPORAN BERJENJANG
+          1. Backup situs, database Pegawai dan SmartApp, config privat, MFA.
+          2. Upload ZIP ke /home/datd1747/ kemudian Extract di folder itu.
+          3. Login Super Admin dengan Google Authenticator.
+          4. Buka https://datawebs.my.id/instal-verifikasi19.php
+          5. Klik Aktifkan Tahap 19; tidak perlu impor SQL manual.
+          6. Dashboard https://datawebs.my.id/super-admin-satu.php#verifikasi-berjenjang
+          7. Petugas/Lurah https://datawebs.my.id/verifikasi-laporan19.php
+          8. Uji dengan akun dummy pemeriksa, Lurah dan pelapor yang berbeda.
+          9. Setelah berhasil, hapus installer dan ZIP dari hosting.
+          Dua tabel baru hanya dibuat dalam SmartApp, data Pegawai asli tidak diubah.
+          Sebelum dashboard lama diberi panel, backup masuk ke
+          portal_private/verification19_backups/ di luar public_html.
+          Tahap ini TIDAK mengesahkan cuti, surat, atau kinerja resmi.
+          HELP
+          rm -f paket/SmartCikoko-TAHAP19-VERIFIKASI-BERJENJANG.zip
+          (cd stage19_pkg && zip -q -X -r ../paket/SmartCikoko-TAHAP19-VERIFIKASI-BERJENJANG.zip .)
+          unzip -t paket/SmartCikoko-TAHAP19-VERIFIKASI-BERJENJANG.zip
+          for f in portal_private/verification19.php portal_private/verification19_admin_panel.php portal_private/verification19_patch.php public_html/verifikasi-laporan19.php public_html/instal-verifikasi19.php public_html/assets/verifikasi19.css public_html/assets/verifikasi19-admin.css; do
+            unzip -Z1 paket/SmartCikoko-TAHAP19-VERIFIKASI-BERJENJANG.zip | grep -Fxq "$f"
+          done
+          if unzip -Z1 paket/SmartCikoko-TAHAP19-VERIFIKASI-BERJENJANG.zip | grep -Eq '(^|/)(index|bootstrap|auth|config|super_admin|mfa|super-admin-satu|pusat-laporan)\.php$'; then
+            echo 'ERROR: core login or existing dashboard must not be inside package'
+            exit 1
+          fi
+      - name: Publish minimal ZIP on GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP19-VERIFIKASI-BERJENJANG.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 19 verification workflow cPanel ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP19-VERIFIKASI-BERJENJANG
+          path: paket/SmartCikoko-TAHAP19-VERIFIKASI-BERJENJANG.zip
+          retention-days: 30
