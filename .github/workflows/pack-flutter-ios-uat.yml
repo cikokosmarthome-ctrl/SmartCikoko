@@ -1,0 +1,37 @@
+name: Flutter SmartCikoko iOS UAT (manual)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Generate iOS project and dependencies
+        working-directory: android_flutter
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter create --project-name smartcikoko --platforms ios .
+          rm -f test/widget_test.dart
+          flutter pub get
+      - name: Check Flutter and widget tests
+        working-directory: android_flutter
+        run: |
+          flutter analyze --no-fatal-infos
+          flutter test
+      - name: Compile iOS app without Apple signing
+        working-directory: android_flutter
+        run: flutter build ios --no-codesign --debug
+      - name: Upload unsigned iOS app for technical verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-iOS-Unsigned-UAT
+          path: android_flutter/build/ios/iphoneos/Runner.app
+          retention-days: 14
+          if-no-files-found: error
