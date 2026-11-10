@@ -1,0 +1,136 @@
+name: Paket Tampilan Compact SmartCikoko
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public_html/formulir-pegawai16.php'
+      - 'public_html/assets/formulir-pegawai16.css'
+      - 'public_html/assets/pusat-operasional23.css'
+      - 'public_html/assets/pusat-laporan.css'
+      - 'public_html/assets/super-admin-satu.css'
+      - 'tests/compact-ui.php'
+      - '.github/workflows/pack-compact-ui.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-compact-ui-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,pdo_sqlite
+          tools: none
+      - name: Lint unchanged core workflows and compact employee page
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l public_html/formulir-pegawai16.php
+          php -l public_html/pusat-operasional23.php
+          php -l public_html/super-admin-satu.php
+          php -l public_html/pusat-laporan.php
+      - name: Test compact native paths and responsive styles
+        run: php tests/compact-ui.php
+      - name: Regression of native employee form permissions and validation
+        run: php tests/stage16-forms.php
+      - name: Regression of role-aware operational navigation
+        run: php tests/stage23-hub.php
+      - name: Check archive contents and no authentication/core replacement
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          f=Path('public_html/formulir-pegawai16.php').read_text()
+          assert f.count('<details class="panel native">')==1
+          assert f.count('</div></details><?php endif;?>')==1
+          assert 'form-main-title' in f
+          assert "f16_create($user" in f
+          assert "f16_review($user" in f
+          for name in ['formulir-pegawai16','pusat-operasional23','pusat-laporan','super-admin-satu']:
+              css=Path('public_html/assets/'+name+'.css').read_text()
+              assert 'SmartCikoko compact operator UI' in css
+              assert css.count('{')==css.count('}'),name
+          print('Compact UI preserves PHP actions, CSS and optional legacy history')
+          PY
+      - name: Build one simple ZIP for cPanel, no installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf compact_ui_pkg
+          mkdir -p compact_ui_pkg/public_html/assets paket
+          cp public_html/formulir-pegawai16.php compact_ui_pkg/public_html/
+          cp public_html/assets/formulir-pegawai16.css compact_ui_pkg/public_html/assets/
+          cp public_html/assets/pusat-operasional23.css compact_ui_pkg/public_html/assets/
+          cp public_html/assets/pusat-laporan.css compact_ui_pkg/public_html/assets/
+          cp public_html/assets/super-admin-satu.css compact_ui_pkg/public_html/assets/
+          cat > compact_ui_pkg/BACA-TAMPILAN-COMPACT.txt <<'HELP'
+          SMARTCIKOKO - TAMPILAN COMPACT, TANPA TAHAP BARU
+          Perubahan: formulir PPPK/PJLP/Cuti, Pusat Operasional,
+          Pusat Laporan, dan Super Admin Ringkas menjadi lebih padat.
+          TIDAK mengubah proses login, MFA, laporan, atau SQL.
+
+          PASANG (3 langkah sederhana):
+          1. BACKUP 5 FILE YANG AKAN DIGANTI KE LUAR public_html:
+             public_html/formulir-pegawai16.php
+             public_html/assets/formulir-pegawai16.css
+             public_html/assets/pusat-operasional23.css
+             public_html/assets/pusat-laporan.css
+             public_html/assets/super-admin-satu.css
+             Juga lakukan backup website secara menyeluruh.
+          2. Buka cPanel File Manager /home/datd1747/,
+             Upload SmartCikoko-TAMPILAN-COMPACT.zip, lalu Extract
+             pada /home/datd1747/; izinkan overwrite hanya 5 file
+             yang didaftarkan di atas.
+          3. Buka https://datawebs.my.id/formulir-pegawai16.php?jenis=pppk
+             dan https://datawebs.my.id/pusat-operasional23.php
+             Refresh paksa Ctrl+F5 jika style lama masih tersimpan.
+          Tidak ada installer, SQL, tabel baru, atau database migration.
+
+          Jika file pada hosting sudah dimodifikasi secara khusus,
+          jangan izinkan overwrite sebelum membandingkan perubahan.
+          Jika ada masalah, kembalikan 5 file yang dicadangkan.
+          File login, MFA, dashboard PHP, index dan laporan lama
+          TIDAK disertakan dalam ZIP.
+          HELP
+          rm -f paket/SmartCikoko-TAMPILAN-COMPACT.zip
+          (cd compact_ui_pkg && zip -q -X -r ../paket/SmartCikoko-TAMPILAN-COMPACT.zip .)
+          unzip -t paket/SmartCikoko-TAMPILAN-COMPACT.zip
+          python3 - <<'PY'
+          import zipfile
+          name='paket/SmartCikoko-TAMPILAN-COMPACT.zip'
+          expected={
+              'public_html/formulir-pegawai16.php',
+              'public_html/assets/formulir-pegawai16.css',
+              'public_html/assets/pusat-operasional23.css',
+              'public_html/assets/pusat-laporan.css',
+              'public_html/assets/super-admin-satu.css',
+              'BACA-TAMPILAN-COMPACT.txt',
+          }
+          with zipfile.ZipFile(name) as z:
+              actual=set(z.namelist())
+              assert actual==expected, actual.symmetric_difference(expected)
+          print('ZIP contains only 5 operator UI files and a readme')
+          PY
+      - name: Publish compact UI ZIP to repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAMPILAN-COMPACT.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko compact operator UI ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAMPILAN-COMPACT
+          path: paket/SmartCikoko-TAMPILAN-COMPACT.zip
+          retention-days: 30
