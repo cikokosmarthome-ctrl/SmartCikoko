@@ -10,6 +10,14 @@ on:
       - 'public_html/assets/cikoko-office-illustration.svg'
       - 'portal_private/mobile_forms_api.php'
       - 'public_html/api/mobile-forms.php'
+      - 'public_html/api/citizen-upload.php'
+      - 'public_html/aktivitas-terpadu.php'
+      - 'public_html/assets/aktivitas-terpadu.css'
+      - 'portal_private/workflow_progress.php'
+      - 'portal_private/workflow_feed.php'
+      - 'portal_private/citizen_followup.php'
+      - 'tests/workflow-progress.php'
+      - 'tests/stage10-unit.php'
       - 'public_html/assets/site-public-v3.css'
       - 'public_html/assets/ui-modern.css'
       - 'public_html/assets/ui-modern.js'
@@ -40,7 +48,14 @@ jobs:
           cp docs/PUBLIC-HTML-BARU-UNIFIED.md _webroot_replacement/BACA-SEBELUM-GANTI.txt
           mkdir -p _webroot_replacement/portal_private
           cp portal_private/mobile_forms_api.php _webroot_replacement/portal_private/mobile_forms_api.php
+          cp portal_private/workflow_progress.php _webroot_replacement/portal_private/workflow_progress.php
+          cp portal_private/workflow_feed.php _webroot_replacement/portal_private/workflow_feed.php
+          mkdir -p _webroot_replacement/PRIVATE-PATCH-REVIEW
+          cp portal_private/citizen_followup.php _webroot_replacement/PRIVATE-PATCH-REVIEW/citizen_followup.php
           php -l _webroot_replacement/portal_private/mobile_forms_api.php
+          php -l _webroot_replacement/portal_private/workflow_progress.php
+          php -l _webroot_replacement/portal_private/workflow_feed.php
+          php -l _webroot_replacement/PRIVATE-PATCH-REVIEW/citizen_followup.php
       - name: Verify all active routes, one admin and sticky header/bottom footer
         run: python3 tests/clean-webroot.py _webroot_replacement
       - name: PHP lint for EVERY generated webroot PHP file
@@ -59,6 +74,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          php tests/workflow-progress.php
+          php tests/stage10-unit.php
           php tests/stage16-forms.php
           php tests/stage23-hub.php
           php tests/compact-ui.php
@@ -69,7 +86,7 @@ jobs:
           set -euo pipefail
           mkdir -p paket
           rm -f paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip
-          (cd _webroot_replacement && zip -q -X -r ../paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip public_html_baru portal_private BACA-SEBELUM-GANTI.txt MANIFEST-DEPLOY.json)
+          (cd _webroot_replacement && zip -q -X -r ../paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip public_html_baru portal_private PRIVATE-PATCH-REVIEW BACA-SEBELUM-GANTI.txt MANIFEST-DEPLOY.json)
           unzip -t paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip
           python3 - <<'PY'
           from pathlib import Path
@@ -86,14 +103,21 @@ jobs:
               assert 'public_html_baru/assets/cikoko-office-illustration.svg' in names
               assert 'public_html_baru/api/mobile-forms.php' in names
               assert 'portal_private/mobile_forms_api.php' in names
+              assert 'portal_private/workflow_progress.php' in names
+              assert 'portal_private/workflow_feed.php' in names
+              assert 'PRIVATE-PATCH-REVIEW/citizen_followup.php' in names
+              assert 'public_html_baru/api/citizen-upload.php' in names
+              assert 'public_html_baru/aktivitas-terpadu.php' in names
               assert 'public_html_baru/assets/admin-modern.js' in names
               assert 'MANIFEST-DEPLOY.json' in names
               assert 'BACA-SEBELUM-GANTI.txt' in names
               assert not any(x.startswith('public_html/') for x in names)
-              assert {x for x in names if x.startswith('portal_private/')}=={'portal_private/mobile_forms_api.php'}
+              assert {x for x in names if x.startswith('portal_private/')}=={
+                  'portal_private/mobile_forms_api.php','portal_private/workflow_progress.php',
+                  'portal_private/workflow_feed.php'}
               assert not any('/instal-' in x or '/perbaiki-' in x for x in names)
               assert len(names)>=65,len(names)
-          print('ZIP deploys public_html_baru separately and ONE NEW private mobile API helper; no config secrets or live index overwrite')
+          print('ZIP stages new private helpers; existing citizen_followup.php is review-only and NEVER automatically overwritten')
           PY
           du -h paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip
       - name: Build small two-file homepage repair for already deployed V1 sites

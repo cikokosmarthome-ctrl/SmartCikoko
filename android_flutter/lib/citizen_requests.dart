@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'src/design.dart';
 import 'package:http/http.dart' as http;
 
 /// Tahap 9 — pengajuan masyarakat dan peninjauan berjenjang lewat API yang sama.
@@ -25,6 +27,10 @@ class _CitizenRequestsState extends State<CitizenRequestsScreen> {
   };
   List<Map<String, dynamic>> requests = [];
   List<Map<String, dynamic>> notifications = [];
+  List<Map<String, dynamic>> requirements = [];
+  List<Map<String, dynamic>> uploadedFiles = [];
+  bool attachmentCatalogReady = false;
+  bool uploading = false;
   Map<String, dynamic>? selected;
   List<Map<String, dynamic>> history = [];
   bool busy = true;
@@ -104,11 +110,35 @@ class _CitizenRequestsState extends State<CitizenRequestsScreen> {
     try {
       final response = await api('citizen_detail', query: {'id': id.toString()});
       final info = Map<String, dynamic>.from(response['data'] as Map);
+      List<Map<String, dynamic>> nextRequirements = [];
+      List<Map<String, dynamic>> nextUploads = [];
+      var canAttach = false;
+      try {
+        final docResponse = await api('citizen_requirements',
+            query: {'id': id.toString()});
+        final documents =
+            Map<String, dynamic>.from(docResponse['data'] as Map);
+        nextRequirements = (documents['requirements'] as List? ?? [])
+            .whereType<Map>()
+            .map((row) => Map<String, dynamic>.from(row))
+            .toList();
+        nextUploads = (documents['files'] as List? ?? [])
+            .whereType<Map>()
+            .map((row) => Map<String, dynamic>.from(row))
+            .toList();
+        canAttach = true;
+      } catch (_) {
+        // The old Stage 9 workflow must remain usable if Stage 10
+        // has not been deployed to the server.
+      }
       if (!mounted) return;
       setState(() {
         selected = Map<String, dynamic>.from(info['case'] as Map);
         history = (info['history'] as List? ?? [])
             .map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        requirements = nextRequirements;
+        uploadedFiles = nextUploads;
+        attachmentCatalogReady = canAttach;
       });
     } catch (e) {
       if (mounted) setState(() => error = e.toString());
@@ -184,6 +214,100 @@ class _CitizenRequestsState extends State<CitizenRequestsScreen> {
     } finally {
       name.dispose();
       purpose.dispose();
+    }
+  }
+
+  Future<void> uploadDocument() async {
+    final item = selected;
+    if (item == null || busy || uploading || requirements.isEmpty) return;
+    final requestId = (item['id'] as num?)?.toInt();
+    if (requestId == null) return;
+    final chosen = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('Pilih Jenis Lampiran'),
+        children: [
+          for (final requirement in requirements)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(
+                  dialogContext, (requirement['code'] ?? '').toString()),
+              child: Text(
+                (requirement['label'] ?? '').toString() +
+                    (requirement['required'] == true ? ' · Wajib' : ' · Kondisional'),
+              ),
+            ),
+        ],
+      ),
+    );
+    if (chosen == null || !mounted) return;
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png'],
+        withData: true,
+        allowMultiple: false,
+      );
+      if (result == null || result.files.isEmpty || !mounted) return;
+      final file = result.files.single;
+      if (file.size > 5 * 1024 * 1024 || file.bytes == null) {
+        setState(() => error =
+            'Lampiran harus berupa PDF/JPG/PNG dengan ukuran maksimal 5 MB.');
+        return;
+      }
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Konfirmasi Lampiran'),
+          content: Text('Unggah ${file.name} ke penyimpanan privat? '
+              'Dokumen hanya dapat diperiksa oleh akun dan petugas berwenang.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Unggah Berkas'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+      setState(() { uploading = true; error = null; });
+      final upload = http.MultipartRequest(
+        'POST', Uri.parse('https://datawebs.my.id/api/citizen-upload.php'),
+      );
+      upload.headers['Authorization'] = 'Bearer ${widget.token}';
+      upload.headers['Accept'] = 'application/json';
+      upload.fields.addAll({
+        'request_id': requestId.toString(),
+        'doc_type': chosen,
+        'confirmed': '1',
+      });
+      upload.files.add(http.MultipartFile.fromBytes(
+        'document', file.bytes!, filename: file.name,
+      ));
+      final streamed = await upload.send().timeout(const Duration(seconds: 45));
+      final response = await http.Response.fromStream(streamed);
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map ||
+          response.statusCode >= 400 || decoded['ok'] != true) {
+        throw Exception(decoded is Map
+            ? (decoded['error'] ?? 'Gagal menyimpan lampiran.').toString()
+            : 'Respons server tidak valid.');
+      }
+      if (!mounted) return;
+      setState(() => uploading = false);
+      await detail(requestId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lampiran berhasil diunggah secara privat.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = 'Unggah gagal: $e');
+    } finally {
+      if (mounted) setState(() => uploading = false);
     }
   }
 
@@ -303,7 +427,17 @@ class _CitizenRequestsState extends State<CitizenRequestsScreen> {
             title: Text((item['reference_no'] ?? '').toString()),
             subtitle: Text((item['applicant_name'] ?? '').toString() +
               ' • ' + (statusLabels[item['status']] ?? '').toString()),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${((item['progress'] as Map?)?['progress_percent'] ?? 0)}%',
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const Icon(Icons.chevron_right, size: 18),
+              ],
+            ),
             onTap: busy ? null : () => detail((item['id'] as num).toInt()),
           )),
         Row(children: [
@@ -322,10 +456,61 @@ class _CitizenRequestsState extends State<CitizenRequestsScreen> {
               Text((selected!['reference_no'] ?? '').toString(),
                 style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
               Chip(label: Text(statusLabels[selected!['status']] ?? 'Tidak diketahui')),
+              if (selected!['progress'] is Map) ...[
+                const SizedBox(height: 7),
+                Row(children: [
+                  const Expanded(child: Text('Progres administratif')),
+                  Text('${(selected!['progress'] as Map)['progress_percent'] ?? 0}%',
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                ]),
+                LinearProgressIndicator(
+                  value: (((selected!['progress'] as Map)['progress_percent']
+                      as num?)?.toDouble() ?? 0).clamp(0, 100) / 100,
+                  minHeight: 9,
+                ),
+                Text((selected!['progress'] as Map)['next_step']?.toString() ?? '',
+                  style: const TextStyle(fontSize: 11)),
+              ],
               Text('Pemohon: ' + (selected!['applicant_name'] ?? '').toString()),
               Text('Almarhum/Almarhumah: ' + (selected!['deceased_name'] ?? '').toString()),
               Text('Hubungan: ' + (relations[selected!['relationship']] ?? '').toString()),
               Text('Keterangan: ' + (selected!['purpose'] ?? '').toString()),
+              const SizedBox(height: 12),
+              const Text('Checklist Persyaratan Ahli Waris (Arsip Lama)',
+                style: TextStyle(fontWeight: FontWeight.w800)),
+              if (!attachmentCatalogReady)
+                const Text('Lampiran belum tersedia di server. Hubungi petugas.',
+                  style: TextStyle(fontSize: 11)),
+              for (final requirement in requirements)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Row(
+                    children: [
+                      Icon(requirement['uploaded'] == true
+                          ? Icons.check_circle : Icons.radio_button_unchecked,
+                        color: requirement['uploaded'] == true
+                          ? Colors.green : CivicColors.muted, size: 17),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(
+                        (requirement['label'] ?? '').toString() +
+                          (requirement['required'] == true ? ' (wajib)' : ' (kondisional)'),
+                        style: const TextStyle(fontSize: 11))),
+                    ],
+                  ),
+                ),
+              if (uploadedFiles.isNotEmpty)
+                Text('${uploadedFiles.length} lampiran tersimpan privat.',
+                  style: const TextStyle(fontSize: 11)),
+              if (citizen && attachmentCatalogReady &&
+                  (selected!['status'] == 'draf' || selected!['status'] == 'revisi'))
+                OutlinedButton.icon(
+                  onPressed: busy || uploading ? null : uploadDocument,
+                  icon: const Icon(Icons.attach_file),
+                  label: const Text('Unggah PDF / Foto (maks. 5 MB)'),
+                ),
+              if (uploading) const LinearProgressIndicator(),
+              const Text('Periksa lampiran sebelum mengirim. Checklist tidak menggantikan pemeriksaan petugas.',
+                style: TextStyle(fontSize: 10, color: CivicColors.muted)),
               if (citizen && (selected!['status'] == 'draf' || selected!['status'] == 'revisi'))
                 OutlinedButton.icon(onPressed: busy ? null : () => edit(selected),
                   icon: const Icon(Icons.edit), label: const Text('Perbarui Draf')),

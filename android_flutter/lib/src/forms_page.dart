@@ -103,8 +103,18 @@ class _FormRecordsPageState extends State<FormRecordsPage> {
             child:Card(child:ListTile(
               title:Text('Laporan #'+(row['id']??'').toString(),
                 style:const TextStyle(fontWeight:FontWeight.w800)),
-              subtitle:Text((row['updated_at']??'').toString(),
-                style:const TextStyle(color:CivicColors.muted,fontSize:11)),
+              subtitle:Column(
+                crossAxisAlignment:CrossAxisAlignment.start,children:[
+                  Text((row['updated_at']??'').toString(),
+                    style:const TextStyle(color:CivicColors.muted,fontSize:11)),
+                  if(row['progress'] is Map)...[
+                    Text('${(row['progress'] as Map)['status_label'] ?? ''} · ${(row['progress'] as Map)['progress_percent'] ?? 0}%',
+                      style:const TextStyle(fontWeight:FontWeight.w800,fontSize:11)),
+                    LinearProgressIndicator(value:(((row['progress'] as Map)['progress_percent']
+                      as num?)?.toDouble()??0).clamp(0,100)/100,minHeight:5),
+                  ],
+                ],
+              ),
               trailing:CivicStatus(status:(row['status']??'').toString()),
               onTap:()=>openForm(row),
             ))),
@@ -129,6 +139,7 @@ class _FormEditorPageState extends State<FormEditorPage> {
   String? error;
   int version=1;
   String status='draf';
+  Map<String,dynamic> progress={};
   List<Map<String,dynamic>> get fields=>PortalApi.rows(widget.schema['fields']);
   String get group=>(widget.schema['group']??'').toString();
   String get kind=>(widget.schema['kind']??'').toString();
@@ -145,6 +156,7 @@ class _FormEditorPageState extends State<FormEditorPage> {
         query:{'group':group,'id':widget.id.toString()});
       final data=Map<String,dynamic>.from(r['data'] as Map);
       status=(data['status']??'draf').toString();
+      progress=Map<String,dynamic>.from(data['progress'] as Map? ?? {});
       version=(data['version'] as num?)?.toInt()??1;
       final values=Map<String,dynamic>.from(data['values'] as Map? ?? {});
       for(final f in fields){
@@ -226,6 +238,19 @@ class _FormEditorPageState extends State<FormEditorPage> {
       Form(key:key,child:ListView(padding:const EdgeInsets.all(18),children:[
         CivicPageTitle(title:(widget.schema['title']??'').toString(),
           subtitle:widget.id==null?'Simpan draf atau ajukan laporan.':'Status: '+status),
+        if(widget.id!=null&&progress.isNotEmpty)...[
+          const SizedBox(height:10),
+          Row(children:[
+            Expanded(child:Text((progress['status_label']??'').toString())),
+            Text('${progress['progress_percent'] ?? 0}%'),
+          ]),
+          LinearProgressIndicator(
+            value:(((progress['progress_percent'] as num?)?.toDouble()??0)
+              .clamp(0,100))/100,minHeight:8),
+          const SizedBox(height:8),
+          Text((progress['next_step']??'').toString(),
+            style:const TextStyle(fontSize:11,color:CivicColors.muted)),
+        ],
         const SizedBox(height:13),
         Card(child:Padding(padding:const EdgeInsets.all(14),
           child:Text((widget.schema['description']??'').toString(),

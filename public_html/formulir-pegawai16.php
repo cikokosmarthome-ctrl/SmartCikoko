@@ -65,7 +65,7 @@ function f16_href(string $kind,int $page=1):string{
 <body>
 <div class="govbar"><div class="wrap">PEMERINTAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA <span>KECAMATAN PANCORAN · KELURAHAN CIKOKO</span></div></div>
 <header class="header"><div class="wrap head"><a class="brand" href="/"><span>KC</span><div><strong>KELURAHAN CIKOKO</strong><small>Administrasi Digital Terpadu</small></div></a>
-<nav><a href="/?page=dashboard">Ruang Kerja</a><a href="/pusat-laporan.php">Pusat Laporan</a>
+<nav><a href="/?page=dashboard">Ruang Kerja</a><a href="/pusat-laporan.php">Pusat Laporan</a><a href="/aktivitas-terpadu.php">Notifikasi &amp; Progres</a>
 <?php if($manager):?><a href="/super-admin-satu.php">Super Admin Ringkas</a><?php endif;?></nav></div></header>
 <section class="hero"><div class="wrap hero-content"><div><small>TAHAP 16 · FORMULIR BERDASARKAN ARSIP LAMA</small>
 <h1>Administrasi PPPK, PJLP dan Cuti</h1>

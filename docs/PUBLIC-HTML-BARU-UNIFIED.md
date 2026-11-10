@@ -93,3 +93,11 @@ Beranda V4 sekarang menyertakan tautan **Profil, Layanan, Informasi, Agenda, Gal
 Perubahan CSS memakai versi `portal-mockup.css?v=20261110b` agar pembaruan tampilan dapat terambil saat staging. Paket `SmartCikoko-WEBSITE-MOCKUP-V4.zip` tetap dihasilkan GitHub Actions dalam folder `public_html_baru` dan **tidak dipasang otomatis** ke hosting. Instruksi backup, inspeksi upload, pengujian, migrasi dan rollback di atas tetap berlaku.
 
 **Pemeriksaan akhir setelah penggantian:** buka `/#profil`, `/#layanan`, `/#galeri`, `/#kontak`, uji tampilan ponsel, login akun uji, halaman Admin, `/api/?resource=posts`, dan `/api/mobile-forms.php?action=catalog` dengan sesi yang berwenang. Respons gagal dari API privat sebelum deployment bukan alasan untuk menghapus database atau menonaktifkan MFA.
+
+## Pembaruan Alur Laporan, Surat, dan Notifikasi Terpadu
+
+Pelajari [ALUR-LAPORAN-SURAT-WEB-FLUTTER.md](ALUR-LAPORAN-SURAT-WEB-FLUTTER.md) sebelum memasang penyempurnaan ini. ZIP V4 sekarang menambah **dua berkas privat baru** `portal_private/workflow_progress.php` dan `portal_private/workflow_feed.php` (di samping helper `mobile_forms_api.php`), serta menyediakan pembaruan `citizen_followup.php` pada folder **`PRIVATE-PATCH-REVIEW/`** untuk ditinjau secara manual.
+
+Berkas `citizen_followup.php` **tidak ditimpa otomatis** ketika ZIP diekstrak di home hosting. Pemilik harus membandingkan dan membackup versi produksi sebelum menerapkan daftar 14 jenis persyaratan Ahli Waris. Tanpa patch tersebut, jenis lampiran lama yang baru ditambahkan belum aktif; pengajuan Tahap 9 tetap mengikuti kemampuan server yang terpasang.
+
+Pusat aktivitas: `/aktivitas-terpadu.php`; API mobile: `/api/?resource=workflow_feed`, `/api/?resource=citizen_requirements&id=...` dan `/api/citizen-upload.php`. Semuanya memakai autentikasi/izin server. **Tidak tersedia push notification ketika aplikasi tertutup**, juga tidak ada klaim otomatis bahwa persetujuan administratif berarti surat resmi sudah terbit.

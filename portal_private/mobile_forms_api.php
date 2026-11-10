@@ -6,6 +6,7 @@ declare(strict_types=1);
  */
 require_once __DIR__.'/detailed_forms16.php';
 require_once __DIR__.'/field_reports17.php';
+require_once __DIR__.'/workflow_progress.php';
 
 function mobile_forms_enabled(array $actor):bool {
     if(!function_exists('account_control_allowed'))
@@ -70,6 +71,7 @@ function mobile_form_list(array $actor,string $group,string $kind,int $page):arr
             'version'=>(int)$row['version'],
             'created_at'=>(string)$row['created_at'],
             'updated_at'=>(string)$row['updated_at'],
+            'progress'=>sc_workflow_progress($group,(string)$row['status']),
             // Never leak payload_json or actor identifiers in list results.
         ];
     }
@@ -90,6 +92,7 @@ function mobile_form_detail(array $actor,string $group,int $id):?array {
         'status'=>(string)$item['status'],'version'=>(int)$item['version'],
         'values'=>$payload,'created_at'=>(string)$item['created_at'],
         'updated_at'=>(string)$item['updated_at'],
+        'progress'=>sc_workflow_progress($group,(string)$item['status']),
         'review_note'=>(string)($item['review_note']??''),
     ];
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../citizen_requests.dart';
 import 'api_client.dart';
+import 'activity_page.dart';
 import 'design.dart';
 import 'forms_page.dart';
 import 'login_page.dart';
@@ -168,13 +170,57 @@ class _PortalShellState extends State<PortalShell> {
     );
   }
 
+  Future<void> openActivity() async {
+    if (token == null) {
+      await login();
+      return;
+    }
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActivityPage(token: token!, user: user),
+      ),
+    );
+  }
+
+  Future<void> confirmExit() async {
+    final exit = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Keluar dari SmartCikoko?'),
+        content: const Text(
+          'Anda akan menutup aplikasi. Draf yang sudah disimpan tetap tersimpan di server. '
+          'Pastikan proses unggah atau pengiriman formulir sudah selesai.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Tetap di Aplikasi'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Keluar Aplikasi'),
+          ),
+        ],
+      ),
+    );
+    if (exit == true && mounted) {
+      await SystemNavigator.pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loading) {
       return const Scaffold(
           body: Center(child: CircularProgressIndicator()));
     }
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) confirmExit();
+      },
+      child: Scaffold(
       appBar: AppBar(
         toolbarHeight: 64,
         titleSpacing: 15,
@@ -193,6 +239,12 @@ class _PortalShellState extends State<PortalShell> {
           ],
         ),
         actions: [
+          if (token != null)
+            IconButton(
+              tooltip: 'Notifikasi laporan dan pengajuan',
+              onPressed: openActivity,
+              icon: const Icon(Icons.notifications_outlined),
+            ),
           if (token == null)
             TextButton(
               onPressed: login,
@@ -261,6 +313,7 @@ class _PortalShellState extends State<PortalShell> {
               selectedIcon: Icon(Icons.person),
               label: 'Akun'),
         ],
+      ),
       ),
     );
   }

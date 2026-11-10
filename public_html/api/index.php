@@ -61,12 +61,16 @@ try {
     }
     $u=api_actor();
     if(!$u)respond(['ok'=>false,'error'=>'Sesi tidak valid atau telah berakhir.'],401);
+    if($resource==='workflow_feed'&&$method==='GET'){
+        require_once dirname(__DIR__,2).'/portal_private/workflow_feed.php';
+        respond(['ok'=>true,'data'=>sc_workflow_feed($u)]);
+    }
     if(str_starts_with($resource,'citizen_')){
         require_once dirname(__DIR__,2).'/portal_private/citizen_requests.php';
         $citizen=t9_actor($u);
         if(!$citizen)respond(['ok'=>false,'error'=>'Sesi atau hak akses akun tidak valid.'],401);
         try{
-            if(in_array($resource,['citizen_notifications','citizen_notice_read','citizen_files','citizen_pending'],true)){
+            if(in_array($resource,['citizen_notifications','citizen_notice_read','citizen_files','citizen_requirements','citizen_pending'],true)){
                 require_once dirname(__DIR__,2).'/portal_private/citizen_followup.php';
                 if(!t10_ready())respond(['ok'=>false,'error'=>'Modul tindak lanjut belum terpasang.'],503);
                 if($resource==='citizen_notifications'&&$method==='GET')
@@ -77,17 +81,35 @@ try {
                 }
                 if($resource==='citizen_files'&&$method==='GET')
                     respond(['ok'=>true,'data'=>t10_files($citizen,(int)($_GET['id']??0))]);
+                if($resource==='citizen_requirements'&&$method==='GET'){
+                    $requestId=(int)($_GET['id']??0);
+                    $files=t10_files($citizen,$requestId);
+                    respond(['ok'=>true,'data'=>[
+                        'requirements'=>t10_requirement_status($files),
+                        'files'=>$files,
+                        'accepted_extensions'=>['pdf','jpg','jpeg','png'],
+                        'max_file_bytes'=>5242880,
+                        'notice'=>'Lampiran diunggah secara privat dan diverifikasi petugas. Checklist tidak otomatis menerbitkan surat.',
+                    ]]);
+                }
                 if($resource==='citizen_pending'&&$method==='GET')
                     respond(['ok'=>true,'data'=>t10_pending_counts($citizen)]);
                 respond(['ok'=>false,'error'=>'Metode tidak diizinkan.'],405);
             }
-            if($resource==='citizen_list'&&$method==='GET')
-                respond(['ok'=>true,'data'=>t9_list($citizen,max(1,(int)($_GET['page']??1)))]);
+            if($resource==='citizen_list'&&$method==='GET'){
+                require_once dirname(__DIR__,2).'/portal_private/workflow_progress.php';
+                $list=t9_list($citizen,max(1,(int)($_GET['page']??1)));
+                foreach($list['rows'] as &$entry)$entry['progress']=sc_workflow_progress('warga',(string)$entry['status']);
+                unset($entry);
+                respond(['ok'=>true,'data'=>$list]);
+            }
             if($resource==='citizen_detail'&&$method==='GET'){
                 $id=(int)($_GET['id']??0);
                 $case=t9_case($citizen,$id);
                 if(!$case)respond(['ok'=>false,'error'=>'Permohonan tidak ditemukan.'],404);
                 unset($case['account_id']);
+                require_once dirname(__DIR__,2).'/portal_private/workflow_progress.php';
+                $case['progress']=sc_workflow_progress('warga',(string)$case['status']);
                 respond(['ok'=>true,'data'=>['case'=>$case,'history'=>t9_history($citizen,$id)]]);
             }
             if($resource==='citizen_create'&&$method==='POST'){

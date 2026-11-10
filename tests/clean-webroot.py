@@ -21,7 +21,8 @@ needed = {
     'monitor-laporan20.php','tugas-pemeriksa21.php',
     'keamanan-superadmin.php','unduh-berkas.php',
     'assets/ui-modern.css','assets/ui-modern.js','assets/admin-modern.js',
-    'assets/site-public-v3.css'
+    'assets/site-public-v3.css', 'aktivitas-terpadu.php',
+    'assets/aktivitas-terpadu.css','api/citizen-upload.php'
 }
 assert needed<=relative,sorted(needed-relative)
 assert not any(
@@ -114,6 +115,16 @@ assert 'body.sc-page-index .header nav' in modern_theme
 assert 'body.sc-page-index > footer' in modern_theme
 assert modern_theme.count('{')==modern_theme.count('}')
 assert 'api/mobile-forms.php' in relative
+assert "workflow_feed" in (ROOT/'api/index.php').read_text(), "Unified feed API route"
+assert "citizen_requirements" in (ROOT/'api/index.php').read_text(), "Attachment catalogue route"
+upload=(ROOT/'api/citizen-upload.php').read_text()
+assert "t10_upload(" in upload and "api_actor()" in upload
+assert "t9_is_citizen" in upload
+assert "uploaded secara privat" not in upload.lower() or "t10_upload(" in upload
+dashboard=(ROOT/'aktivitas-terpadu.php').read_text()
+assert "sc_workflow_feed(" in dashboard and "<progress" in dashboard
+assert "h($notice['message'])" in dashboard
+
 assert 'assets/cikoko-office-illustration.svg' in relative
 
 
