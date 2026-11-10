@@ -40,7 +40,7 @@ $captions=['pass'=>'Terbaca','attention'=>'Perlu diperiksa','unavailable'=>'Tida
 <p>Membandingkan angka status laporan, kesiapan modul, dan keterhubungan layanan tanpa membuat laporan, mengubah data, atau membuka identitas warga.</p></div>
 <div class="identity"><span><?=h(mb_strtoupper(mb_substr((string)($admin['name']??'A'),0,1)))?></span>
 <div><b>Super Administrator</b><small>MFA terverifikasi · <?=h($report['generated_at'])?> WIB</small></div></div></div>
-<div class="notice">Pemeriksaan ini hanya memvalidasi fungsi baca dan keberadaan kode. **Tidak** menguji pengajuan, persetujuan resmi, atau operasional Cron Jobs dan tidak menggantikan uji langsung dengan akun dummy.</div>
+<div class="notice">Pemeriksaan ini hanya memvalidasi fungsi baca dan keberadaan kode. <strong>Tidak</strong> menguji pengajuan, persetujuan resmi, atau operasional Cron Jobs dan tidak menggantikan uji langsung dengan akun dummy.</div>
 <div class="metrics">
 <div><small>Pemeriksaan terbaca</small><strong><?=$report['totals']['pass']?></strong><span>Terbatas pada cek teknis</span></div>
 <div><small>Perlu peninjauan</small><strong><?=$report['totals']['attention']?></strong><span>Bukan otomatis kegagalan layanan</span></div>
@@ -58,7 +58,7 @@ $source=$report['source_totals'][$stage]??null;?>
 <span>Hitung sumber independen:
 <?=is_int($source)?number_format($source,0,',','.'): 'belum terbaca'?></span></div>
 <?php endforeach;?></div>
-<p class="subtle">Angka hanya mencakup **tabel laporan tambahan Tahap 15–17**. Data kepegawaian asli, surat RT/RW, pelayanan Ahli Waris dan persetujuan cuti tidak otomatis dihitung di sini.</p>
+<p class="subtle">Angka hanya mencakup <strong>tabel laporan tambahan Tahap 15–17</strong>. Data kepegawaian asli, surat RT/RW, pelayanan Ahli Waris dan persetujuan cuti tidak otomatis dihitung di sini.</p>
 </section>
 <?php foreach($groups as $group=>$heading):
 $items=array_values(array_filter($report['entries'],static fn($entry)=>$entry['group']===$group));
