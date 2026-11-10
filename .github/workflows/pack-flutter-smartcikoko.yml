@@ -11,9 +11,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
-concurrency:
-  group: smartcikoko-flutter-mobile
-  cancel-in-progress: false
+# Independent CI runs avoid blocking a release behind a queued macOS runner.
 jobs:
   android:
     runs-on: ubuntu-latest
