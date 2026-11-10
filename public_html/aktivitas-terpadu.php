@@ -8,7 +8,7 @@ try {
     $feed=sc_workflow_feed($viewer);
 }catch(RuntimeException $e){http_response_code(403);exit('Akun tidak dapat mengakses pusat aktivitas.');}
 catch(Throwable $e){http_response_code(503);exit('Pusat aktivitas belum tersedia. Hubungi administrator.');}
-$items=$feed['items'];$notifications=$feed['notifications'];$summary=$feed['summary'];
+$items=$feed['items'];$notifications=$feed['notifications'];$summary=$feed['summary'];$queue=$feed['review_queue']??[];
 header('Cache-Control: private,no-store');
 ?><!doctype html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -24,6 +24,8 @@ header('Cache-Control: private,no-store');
 <div><strong><?=(int)$summary['under_review']?></strong><span>Dalam Alur Kerja</span></div>
 <div><strong><?=(int)$summary['completed']?></strong><span>Ditutup / Selesai</span></div>
 </div>
+<?php if($queue):?><section class="activity-panel"><h2>Antrean yang Dapat Ditinjau</h2><p class="activity-muted">Hanya akun petugas/administrator berwenang. Tidak menampilkan identitas pemohon di ringkasan.</p>
+<?php foreach($queue as $case):?><div class="activity-notice"><strong><?=h($case['reference'])?> · <?=h($case['status_label'])?> (<?=(int)$case['progress_percent']?>%)</strong><small><?=h($case['updated_at'])?> WIB</small> <a href="<?=h($case['web_url'])?>">Periksa pengajuan →</a></div><?php endforeach;?></section><?php endif;?>
 <div class="activity-cols"><section class="activity-panel"><div class="activity-heading"><h2>Daftar Pengajuan dan Laporan</h2><a href="/aktivitas-terpadu.php" aria-label="Muat ulang aktivitas">↻ Muat Ulang</a></div>
 <?php if(!$items):?><p class="activity-empty">Belum ada aktivitas milik akun ini pada modul yang tersedia.</p><?php endif;?>
 <?php foreach($items as $item):?><article class="activity-case">
