@@ -1,0 +1,130 @@
+name: Paket Tahap 25 Pemeriksaan Operasional
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/audit25.php'
+      - 'portal_private/audit25_patch.php'
+      - 'portal_private/audit25_admin_panel.php'
+      - 'public_html/cek-operasional25.php'
+      - 'public_html/instal-operasional25.php'
+      - 'public_html/assets/cek-operasional25.css'
+      - 'public_html/assets/audit25-admin.css'
+      - 'tests/stage25-operational.php'
+      - '.github/workflows/pack-stage25.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage25-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,pdo_sqlite
+          tools: none
+      - name: Validate Stage25 PHP syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/audit25.php portal_private/audit25_patch.php portal_private/audit25_admin_panel.php public_html/cek-operasional25.php public_html/instal-operasional25.php; do
+            php -l "$f"
+          done
+      - name: Test synthetic SQLite report consistency and role isolation
+        run: php tests/stage25-operational.php
+      - name: Ensure prior Stage23/24 aggregates still pass
+        run: php tests/stage23-hub.php
+      - name: Lint patched current Super Admin dashboard
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -r 'require "portal_private/audit25_patch.php"; file_put_contents("/tmp/stage25-admin.php",a25_patch(file_get_contents("public_html/super-admin-satu.php")));'
+          php -l /tmp/stage25-admin.php
+      - name: Confirm no SQL writes or login/MFA replacement
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          for path in ['public_html/assets/cek-operasional25.css','public_html/assets/audit25-admin.css']:
+              css=Path(path).read_text()
+              assert css.count('{')==css.count('}'),path
+              assert '@media' in css,path
+          src=Path('portal_private/audit25.php').read_text()
+          installer=Path('public_html/instal-operasional25.php').read_text()
+          assert 'h23_counts($admin)' in src
+          assert 'COUNT(*) FROM ' in src
+          assert 'a25_reconcile' in src
+          assert "SMARTCIKOKO_TAHAP22_STRICT_GUARD" in src
+          assert 'SELECT 1' in src
+          for bad in ['CREATE TABLE','ALTER TABLE','DELETE FROM','INSERT INTO','UPDATE unified_','DROP TABLE']:
+              assert bad not in src,bad
+              assert bad not in installer,bad
+          assert 'require_super_admin()' in installer
+          assert 'verify_csrf()' in installer
+          assert 'a25_apply(' in installer
+          assert 'audit25_backups' in Path('portal_private/audit25_patch.php').read_text()
+          print('Stage25 read-only checks, CSP styles and SHA-backed installer guards passed')
+          PY
+      - name: Build minimal new-files-only ZIP for cPanel
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage25_pkg
+          mkdir -p stage25_pkg/portal_private stage25_pkg/public_html/assets paket
+          cp portal_private/audit25.php portal_private/audit25_patch.php portal_private/audit25_admin_panel.php stage25_pkg/portal_private/
+          cp public_html/cek-operasional25.php public_html/instal-operasional25.php stage25_pkg/public_html/
+          cp public_html/assets/cek-operasional25.css public_html/assets/audit25-admin.css stage25_pkg/public_html/assets/
+          cat > stage25_pkg/BACA-TAHAP25.txt <<'HELP'
+          SMARTCIKOKO TAHAP 25 — PEMERIKSAAN OPERASIONAL TERPADU
+          1. Backup website, database Pegawai dan SmartApp serta kunci MFA.
+          2. Pastikan Tahap 15–24 yang diperlukan telah dipasang. Tahap 24
+             harus dipasang agar statistik bisa dibandingkan secara tepat.
+          3. cPanel File Manager -> /home/datd1747/
+          4. Upload ZIP di direktori tersebut dan Extract DI SITU.
+          5. Login Super Admin menggunakan Google Authenticator.
+          6. Buka https://datawebs.my.id/instal-operasional25.php
+          7. Klik Hubungkan Pemeriksaan Tahap 25.
+          8. Buka https://datawebs.my.id/cek-operasional25.php
+          9. Periksa koneksi, status Tahap 15–22, angka 15–17 dan
+             penugasan. Terapkan UAT dengan akun dummy terpisah.
+          10. Setelah pengujian, hapus installer dan ZIP dari hosting.
+          11. Simpan backup privat portal_private/audit25_backups.
+          Tidak membuat tabel atau laporan, tidak perlu SQL manual.
+          ZIP hanya menambahkan file baru. Installer hanya menambah satu
+          panel ke Super Admin setelah pencadangan dan pemeriksaan SHA.
+          TIDAK mengubah login, MFA, halaman Beranda atau data kepegawaian.
+          Status hasil cek bukan sertifikat kesiapan produksi.
+          HELP
+          rm -f paket/SmartCikoko-TAHAP25-PEMERIKSAAN-OPERASIONAL.zip
+          (cd stage25_pkg && zip -q -X -r ../paket/SmartCikoko-TAHAP25-PEMERIKSAAN-OPERASIONAL.zip .)
+          unzip -t paket/SmartCikoko-TAHAP25-PEMERIKSAAN-OPERASIONAL.zip
+          for f in portal_private/audit25.php portal_private/audit25_patch.php portal_private/audit25_admin_panel.php public_html/cek-operasional25.php public_html/instal-operasional25.php public_html/assets/cek-operasional25.css public_html/assets/audit25-admin.css; do
+            unzip -Z1 paket/SmartCikoko-TAHAP25-PEMERIKSAAN-OPERASIONAL.zip | grep -Fxq "$f"
+          done
+          if unzip -Z1 paket/SmartCikoko-TAHAP25-PEMERIKSAAN-OPERASIONAL.zip | grep -Eq '(^|/)(index|bootstrap|auth|config|super_admin|mfa|super-admin-satu|pusat-laporan|verification19|review22|hub23)\.php$'; then
+            echo 'ERROR: existing site file must not be overwritten by ZIP'
+            exit 1
+          fi
+      - name: Publish tested Stage25 ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP25-PEMERIKSAAN-OPERASIONAL.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage25 read-only operational check ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP25-PEMERIKSAAN-OPERASIONAL
+          path: paket/SmartCikoko-TAHAP25-PEMERIKSAAN-OPERASIONAL.zip
+          retention-days: 30
