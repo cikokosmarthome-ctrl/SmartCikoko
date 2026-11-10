@@ -61,7 +61,7 @@ function f16_href(string $kind,int $page=1):string{
 <!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#103657">
 <title>Formulir Kepegawaian Terstruktur | SmartCikoko</title>
-<link rel="stylesheet" href="/assets/formulir-pegawai16.css"></head>
+<link rel="stylesheet" href="/assets/formulir-pegawai16.css?v=compact1"></head>
 <body>
 <div class="govbar"><div class="wrap">PEMERINTAH PROVINSI DAERAH KHUSUS IBUKOTA JAKARTA <span>KECAMATAN PANCORAN · KELURAHAN CIKOKO</span></div></div>
 <header class="header"><div class="wrap head"><a class="brand" href="/"><span>KC</span><div><strong>KELURAHAN CIKOKO</strong><small>Administrasi Digital Terpadu</small></div></a>
@@ -81,7 +81,7 @@ function f16_href(string $kind,int $page=1):string{
 <?php endforeach;?></div>
 <div class="layout <?=$manager?'manager-mode':''?>">
 <section class="panel" id="pengajuan">
-<div class="panel-top"><div><span class="eyebrow">INPUT TERSTRUKTUR</span><h2><?=h($kinds[$kind]['name'])?></h2></div><span class="chip">Draf Administrasi</span></div>
+<div class="panel-top"><div><h1 class="form-main-title"><?=h($kinds[$kind]['name'])?></h1></div><span class="chip">Draf Administrasi</span></div>
 <details class="scope"><summary>Informasi formulir</summary><p>Disesuaikan dengan sumber <code><?=h($kinds[$kind]['native'])?></code>. Pengajuan ini tidak otomatis menjadi laporan resmi, persetujuan cuti, atau unggahan bukti.</p></details>
 <?php if($manager):?><div class="empty">Super Admin bertugas meninjau; pembuatan formulir atas nama pegawai lain tidak diizinkan. Gunakan akun petugas untuk pengajuan baru.</div>
 <?php elseif(!$allowed):?><div class="empty">Kategori ini hanya tersedia untuk akun dan peran yang sesuai. Silakan pilih formulir yang menjadi kewenangan Anda.</div>
