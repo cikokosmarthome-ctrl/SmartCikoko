@@ -85,3 +85,11 @@ Jika ada satu modul yang gagal, lakukan rollback dan perbaiki modul spesifik ter
 ## Jika folder lama mempunyai file lebih banyak
 
 Daftar file yang benar-benar ada di cPanel dapat berbeda dari repository. Paket ini tidak boleh dianggap salinan lengkap file unggahan atau konfigurasi server. **Jangan hapus `public_html` lama sebelum kontennya dicatat, dibackup, dan dipastikan tidak mengandung data unik**.
+
+## Penyempurnaan V4 — navigasi sesuai mockup
+
+Beranda V4 sekarang menyertakan tautan **Profil, Layanan, Informasi, Agenda, Galeri, Kontak** di samping Beranda dan Masuk Portal. Bagian Profil dan Kontak berisi informasi institusi yang tidak memerlukan data sensitif; Galeri menampilkan ilustrasi layanan dengan keterangan yang jelas **bukan dokumentasi foto nyata**, sehingga tidak mengarang foto kegiatan atau nomor kontak.
+
+Perubahan CSS memakai versi `portal-mockup.css?v=20261110b` agar pembaruan tampilan dapat terambil saat staging. Paket `SmartCikoko-WEBSITE-MOCKUP-V4.zip` tetap dihasilkan GitHub Actions dalam folder `public_html_baru` dan **tidak dipasang otomatis** ke hosting. Instruksi backup, inspeksi upload, pengujian, migrasi dan rollback di atas tetap berlaku.
+
+**Pemeriksaan akhir setelah penggantian:** buka `/#profil`, `/#layanan`, `/#galeri`, `/#kontak`, uji tampilan ponsel, login akun uji, halaman Admin, `/api/?resource=posts`, dan `/api/mobile-forms.php?action=catalog` dengan sesi yang berwenang. Respons gagal dari API privat sebelum deployment bukan alasan untuk menghapus database atau menonaktifkan MFA.
