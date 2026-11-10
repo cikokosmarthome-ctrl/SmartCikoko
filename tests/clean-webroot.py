@@ -20,7 +20,8 @@ needed = {
     'kendali-verifikasi22.php','verifikasi-laporan19.php',
     'monitor-laporan20.php','tugas-pemeriksa21.php',
     'keamanan-superadmin.php','unduh-berkas.php',
-    'assets/ui-modern.css','assets/ui-modern.js','assets/admin-modern.js'
+    'assets/ui-modern.css','assets/ui-modern.js','assets/admin-modern.js',
+    'assets/site-public-v3.css'
 }
 assert needed<=relative,sorted(needed-relative)
 assert not any(
@@ -81,6 +82,25 @@ assert 'a(\'pjlp\'' in index
 assert 'a(\'waris\'' in index
 assert 'login_matches' in index
 assert 'waris_change_status' in index
+assert '/assets/site-public-v3.css?v=20261110v3' in index
+assert 'aria-labelledby="home-title"' in index
+assert 'class="hero-panel-head"' in index
+assert 'class="hero-quick-grid"' in index
+assert index.count('class="hero-quick-link"')==4
+assert 'class="outline">CIKOKO' not in index
+assert '<span class="seal">KC</span>' in index
+
+public_theme=(ROOT/'assets/site-public-v3.css').read_text()
+assert '--site-navy' in public_theme
+assert 'body.sc-page-index > header.header .headinner' in public_theme
+assert 'flex-wrap:nowrap!important' in public_theme
+assert 'body.sc-page-index .hero .hero-visual' in public_theme
+assert 'background:linear-gradient(145deg,#103955' in public_theme
+assert 'body.sc-page-index .hero-quick-grid' in public_theme
+assert 'body.sc-page-index .hero .btn.primary' in public_theme
+assert 'body.sc-page-index .service' in public_theme
+assert 'body.sc-page-index > footer.footer' in public_theme
+assert public_theme.count('{')==public_theme.count('}')
 
 form=(ROOT/'formulir-pegawai16.php').read_text()
 assert 'f16_create($user' in form
