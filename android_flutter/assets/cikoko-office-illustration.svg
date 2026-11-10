@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 590" role="img" aria-labelledby="title desc">
+<title id="title">Ilustrasi Gedung Pelayanan Kelurahan Cikoko</title>
+<desc id="desc">Ilustrasi arsitektur fasilitas pelayanan pemerintah, dengan bendera Indonesia dan taman. Bukan foto gedung sebenarnya.</desc>
+<defs>
+<linearGradient id="sky" x2="0" y2="1"><stop stop-color="#a7d6ef"/><stop offset="1" stop-color="#eef9ff"/></linearGradient>
+<linearGradient id="wall" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#d9e2e7"/></linearGradient>
+<linearGradient id="glass" x2="1" y2="1"><stop stop-color="#173e5b"/><stop offset=".48" stop-color="#3e758e"/><stop offset="1" stop-color="#113852"/></linearGradient>
+<linearGradient id="ground" x2="0" y2="1"><stop stop-color="#a6c38d"/><stop offset="1" stop-color="#5b8c61"/></linearGradient>
+<filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="13" flood-opacity=".20"/></filter>
+</defs>
+<rect width="900" height="590" fill="url(#sky)"/>
+<path d="M0 333Q163 286 320 319T650 323T900 305V590H0Z" fill="#a6cad1" opacity=".35"/>
+<path d="M0 428L900 407V590H0Z" fill="#cdd7c7"/>
+<path d="M0 506Q340 478 900 494V590H0Z" fill="url(#ground)"/>
+<path d="M278 590L400 460H636L770 590Z" fill="#a7acaf"/>
+<path d="M321 590L417 468H615L724 590Z" fill="#d4d7d7"/>
+<g opacity=".58" fill="#86ac9d"><rect x="31" y="245" width="46" height="181"/><rect x="83" y="271" width="38" height="160"/><rect x="766" y="258" width="47" height="174"/><rect x="825" y="288" width="39" height="148"/></g>
+<g filter="url(#shadow)">
+<rect x="220" y="170" width="527" height="295" rx="8" fill="#b8c0c7"/>
+<rect x="225" y="183" width="510" height="257" fill="url(#wall)"/>
+<path d="M190 188H752L728 169H213Z" fill="#2e4d61"/>
+<rect x="211" y="191" width="535" height="23" fill="#1c3b50"/>
+<rect x="256" y="229" width="446" height="58" rx="6" fill="#eaf1f2"/>
+<text x="479" y="253" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#2c4e62" letter-spacing="3">PELAYANAN TERPADU</text>
+<text x="479" y="278" text-anchor="middle" font-family="Arial,sans-serif" font-size="26" font-weight="800" fill="#18354e">KELURAHAN CIKOKO</text>
+<rect x="265" y="305" width="110" height="122" fill="url(#glass)"/><rect x="385" y="305" width="117" height="122" fill="url(#glass)"/><rect x="512" y="305" width="116" height="122" fill="url(#glass)"/><rect x="639" y="305" width="66" height="122" fill="url(#glass)"/>
+<g stroke="#e1ecee" stroke-width="7"><path d="M321 305V427M442 305V427M569 305V427M674 305V427"/><path d="M265 366H705"/></g>
+<rect x="396" y="346" width="99" height="81" fill="#163751"/><rect x="402" y="350" width="42" height="73" fill="#467b91"/><rect x="448" y="350" width="42" height="73" fill="#30637b"/>
+<path d="M236 295H727L750 310H214Z" fill="#1b3c52"/>
+<rect x="250" y="441" width="462" height="20" fill="#bdc6cb"/>
+</g>
+<g transform="translate(197 184)"><path d="M0 0V290" stroke="#c8d3d5" stroke-width="5"/><path d="M4 6H94L81 40H4Z" fill="#ec2e3f"/><path d="M4 23H88L81 40H4Z" fill="white"/><circle cy="-3" r="6" fill="#f6d69b"/></g>
+<g>
+<path d="M75 482l35-168M99 475l-6-152" stroke="#74634e" stroke-width="16" stroke-linecap="round"/>
+<circle cx="89" cy="317" r="74" fill="#3c8861"/><circle cx="42" cy="354" r="55" fill="#479c68"/><circle cx="132" cy="356" r="50" fill="#358258"/><circle cx="84" cy="269" r="45" fill="#55a973"/>
+<path d="M794 485l-16-181" stroke="#7e6344" stroke-width="18" stroke-linecap="round"/>
+<circle cx="772" cy="291" r="67" fill="#3e8e5b"/><circle cx="820" cy="350" r="52" fill="#3c865f"/><circle cx="732" cy="357" r="49" fill="#4fa675"/><circle cx="781" cy="248" r="41" fill="#59aa78"/>
+</g>
+<g fill="#8da956"><ellipse cx="205" cy="486" rx="87" ry="29"/><ellipse cx="729" cy="489" rx="91" ry="29"/></g>
+<g fill="#f8dd8c"><circle cx="144" cy="475" r="5"/><circle cx="181" cy="484" r="5"/><circle cx="711" cy="483" r="4"/><circle cx="766" cy="491" r="5"/></g>
+<path d="M0 552Q240 518 445 540T900 537V590H0Z" fill="#607f63" opacity=".14"/>
+</svg>
