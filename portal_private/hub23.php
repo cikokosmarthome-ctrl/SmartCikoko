@@ -133,7 +133,7 @@ function h23_cards(array $actor):array {
         ];
         foreach($adminCards as [$key,$label,$desc,$url,$stage]){
             $add(h23_card($key,$label,$desc,$url,'pengendalian',$stage,
-                !ctype_digit($stage)||h23_ready($stage)));
+                preg_match('/^[0-9]+$/D',$stage)!==1||h23_ready($stage)));
         }
     }
     return $cards;
@@ -234,8 +234,40 @@ function h23_notifications(array $actor):array {
     }
     return ['unread'=>$unread,'incomplete'=>$incomplete];
 }
+/**
+ * A broken reporting source must not blank the entire workspace.
+ * Never catch authorization failures: live account status is checked first.
+ * Log only the component name and exception class; no report/personal data.
+ */
+function h23_guarded(string $label,callable $loader,mixed $fallback,array &$warnings):mixed {
+    try{return $loader();}
+    catch(Throwable $e){
+        error_log('Stage23 workspace component failed: '.$label.' ('.get_class($e).')');
+        $warnings[]=$label;
+        return $fallback;
+    }
+}
 function h23_overview(array $actor):array {
-    return ['cards'=>h23_cards($actor),'counts'=>h23_counts($actor),
-        'tasks'=>h23_tasks($actor,8),'notifications'=>h23_notifications($actor),
-        'admin'=>h23_admin($actor)];
+    if(!account_control_allowed($actor))
+        throw new RuntimeException('Akun tidak memiliki izin untuk Pusat Operasional.');
+    $admin=h23_admin($actor);
+    $warnings=[];
+    $basicCards=[
+        h23_card('ruang_kerja','Ruang Kerja','Buka dashboard akun','/?page=dashboard','umum','Portal'),
+        h23_card('laporan','Pusat Laporan','Buka modul pelaporan sesuai izin','/pusat-laporan.php','laporan','15',h23_ready('15')),
+    ];
+    if($admin){
+        $basicCards[]=h23_card('super','Super Admin Ringkas','Pusat kendali yang telah terpasang',
+            '/super-admin-satu.php','pengendalian','Portal');
+    }
+    $cards=h23_guarded('menu modul',static fn()=>h23_cards($actor),$basicCards,$warnings);
+    $counts=h23_guarded('ringkasan laporan',static fn()=>h23_counts($actor),
+        ['totals'=>['draf'=>0,'aktif'=>0,'perbaikan'=>0,'selesai'=>0],
+         'available'=>0,'missing'=>['15','16','17'],
+         'scope'=>$admin?'semua laporan':'laporan akun ini'],$warnings);
+    $tasks=h23_guarded('tugas pemeriksa',static fn()=>h23_tasks($actor,8),
+        ['rows'=>[],'incomplete'=>true],$warnings);
+    $notifications=h23_guarded('pengingat',static fn()=>h23_notifications($actor),
+        ['unread'=>0,'incomplete'=>true],$warnings);
+    return compact('cards','counts','tasks','notifications','admin','warnings');
 }
