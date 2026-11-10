@@ -56,4 +56,62 @@ $disabled=$accounts['rt'];$disabled['active']=false;
 try{$deny=sc_smart_catalog($disabled);ensure_smart(false,'Inactive account must be refused');}
 catch(RuntimeException $e){ensure_smart(true,'inactive denied');}
 ensure_smart(mobile_form_catalog($disabled)===[],'Inactive account cannot fetch forms');
+// Strong parity assurance: every web catalog form must match Flutter server schema.
+// The citizen letter flow intentionally uses a dedicated citizen API rather than
+// a fake generic form with fewer required attachments.
+$oldCatalog=$admin;
+$appCatalog=mobile_form_catalog($accounts['admin']);
+$appKinds=[];
+foreach($appCatalog as $schema){
+    $identifier=(string)$schema['group'].':'.(string)$schema['kind'];
+    ensure_smart(!isset($appKinds[$identifier]),'No duplicate Flutter schema '.$identifier);
+    $appKinds[$identifier]=$schema;
+}
+foreach($oldCatalog as $web){
+    $identifier=(string)$web['group'].':'.(string)$web['kind'];
+    if($web['group']==='warga'){
+        ensure_smart($web['web_url']==='/pengajuan-warga.php',
+            'Citizen letters must use the original authorized attachment workflow');
+        continue;
+    }
+    ensure_smart(isset($appKinds[$identifier]),
+        'Missing mobile form for web module '.$identifier);
+    $schema=$appKinds[$identifier];
+    ensure_smart($schema['title']===$web['title'] || $web['group']==='laporan',
+        'Web and Flutter titles differ for '.$identifier);
+    ensure_smart(count($schema['fields'])===$web['fields_total'],
+        'Web and Flutter field counts must match for '.$identifier);
+    ensure_smart($schema['can_create']===$web['can_create'],
+        'Web and Flutter create permission must match for '.$identifier);
+    foreach($schema['fields'] as $field){
+        ensure_smart(isset($field['key'],$field['label'],$field['type'],$field['required']),
+            'Mobile field definition incomplete for '.$identifier);
+    }
+}
+ensure_smart(count($appKinds)===17,
+    'All seventeen non-citizen workflows visible to Super Admin');
+ensure_smart(count($oldCatalog)===count($appKinds)+1,
+    'The eighteenth flow must be a dedicated citizen letter service');
+$roles=[
+    ['source'=>'pegawai','id'=>'fake-asn','role'=>'asn'],
+    ['source'=>'smartapp','id'=>'fake-rw','role'=>'rw'],
+    ['source'=>'smartapp','id'=>'fake-lmk','role'=>'lmk'],
+    ['source'=>'smartapp','id'=>'fake-jumantik','role'=>'jumantik'],
+    ['source'=>'smartapp','id'=>'fake-fkdm','role'=>'fkdm'],
+    ['source'=>'smartapp','id'=>'fake-ppsu','role'=>'ppsu'],
+    ['source'=>'pancoran','id'=>'fake-pppk-pancoran','role'=>'pppk_pancoran'],
+];
+foreach($roles as $who){
+    $web=sc_smart_catalog($who);
+    $app=mobile_form_catalog($who);
+    $allowed=[];
+    foreach($app as $schema)$allowed[$schema['group'].':'.$schema['kind']]=$schema;
+    foreach($web as $module){
+        if($module['group']==='warga')continue;
+        ensure_smart(isset($allowed[$module['group'].':'.$module['kind']]),
+            'Role cross-platform missing '.$who['role'].' '.$module['kind']);
+        ensure_smart($allowed[$module['group'].':'.$module['kind']]['can_create']===$module['can_create'],
+            'Role create permission mismatch '.$who['role'].' '.$module['kind']);
+    }
+}
 echo "PASS: Cikoko Smart 18 mapped categories, role isolation, mobile parity and admin monitoring.\n";
