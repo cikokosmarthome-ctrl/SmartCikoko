@@ -20,6 +20,21 @@ function db(string $source='smartapp'):PDO {
             $db->exec("CREATE TABLE unified_account_access(actor_source TEXT,actor_id TEXT,login_allowed INTEGER)");
             $db->exec("CREATE TABLE unified_module_access(actor_source TEXT,actor_id TEXT,ability TEXT,decision TEXT)");
             $db->exec("INSERT INTO unified_portal_users VALUES('rt1','rt',1),('warga1','warga',1),('lurah1','lurah',1),('ptsp1','ptsp',1),('blocked','rt',0)");
+            foreach(['unified_report_intake','unified_detailed_forms16','unified_field_reports17'] as $table)
+                $db->exec("CREATE TABLE $table(id INTEGER PRIMARY KEY, status TEXT, actor_source TEXT, actor_id TEXT)");
+            foreach(['unified_report_intake_history','unified_detailed_form_history16','unified_field_history17'] as $table)
+                $db->exec("CREATE TABLE $table(id INTEGER PRIMARY KEY)");
+            $db->exec("INSERT INTO unified_report_intake VALUES
+                (1,'draf','smartapp','rt1'),
+                (2,'diajukan','smartapp','rt1'),
+                (3,'perbaikan','smartapp','warga1')");
+            $db->exec("INSERT INTO unified_detailed_forms16 VALUES
+                (1,'ditinjau','pegawai','pppk1'),
+                (2,'ditutup','pegawai','pjlp1')");
+            $db->exec("INSERT INTO unified_field_reports17 VALUES
+                (1,'ditutup','smartapp','rt1'),
+                (2,'perbaikan','smartapp','rt1'),
+                (3,'draf','smartapp','warga1')");
         }
         $pool[$source]=$db;
     }
@@ -121,4 +136,22 @@ try{
     @rmdir($private.'/hub23_backups');@unlink($web.'/super-admin-satu.php');
     @rmdir($web);@rmdir($private);@rmdir($root);
 }
+// Stage24 regression: reports from numeric module keys must not produce PHP
+// TypeError under strict_types=1; verify exact per-user and Super Admin totals.
+$adminSummary=h23_counts($admin);
+ok23($adminSummary['available']===3&&$adminSummary['missing']===[],'All 3 reporting modules are readable under strict PHP types');
+ok23($adminSummary['totals']===['draf'=>2,'aktif'=>2,'perbaikan'=>2,'selesai'=>2],'Super Admin correct aggregated statuses');
+ok23($adminSummary['by_stage'][15]['total']===3
+    &&$adminSummary['by_stage'][16]['total']===2
+    &&$adminSummary['by_stage'][17]['total']===3,'No duplicate module totals');
+$rtSummary=h23_counts($rt);
+ok23($rtSummary['totals']===['draf'=>1,'aktif'=>1,'perbaikan'=>1,'selesai'=>1],'RT account sees only own cross-module records');
+$pppkSummary=h23_counts($pppk);
+ok23($pppkSummary['totals']===['draf'=>0,'aktif'=>1,'perbaikan'=>0,'selesai'=>0],'Pegawai report isolated by actor source and ID');
+$wargaSummary=h23_counts($warga);
+ok23($wargaSummary['totals']===['draf'=>1,'aktif'=>0,'perbaikan'=>1,'selesai'=>0],'Citizen reports not mixed with other accounts');
+$noDataSummary=h23_counts(['source'=>'pegawai','id'=>'missing','role'=>'pppk']);
+ok23($noDataSummary['available']===3&&array_sum($noDataSummary['totals'])===0,'Empty records show zero only when sources are readable');
+$overview=h23_overview($admin);
+ok23(!in_array('ringkasan laporan',$overview['warnings'],true),'Entire Stage23 hub no longer loses report summary to a numeric-key TypeError');
 echo "Stage23 role-filtered navigation, withheld modules, safe internal links, dashboard backups and search passed.\n";
