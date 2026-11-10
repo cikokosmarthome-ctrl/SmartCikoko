@@ -1,0 +1,124 @@
+name: Tahap 24 Perbaikan Statistik Operasional
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/hub23.php'
+      - 'portal_private/stats24_repair.php'
+      - 'public_html/pusat-operasional23.php'
+      - 'public_html/perbaiki-statistik24.php'
+      - 'tests/stage23-hub.php'
+      - 'tests/stage24-statistics.php'
+      - '.github/workflows/pack-stage24.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage24-release
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,pdo_sqlite
+          tools: none
+      - name: Validate PHP syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/hub23.php portal_private/stats24_repair.php public_html/pusat-operasional23.php public_html/perbaiki-statistik24.php tests/stage23-hub.php tests/stage24-statistics.php; do
+            php -l "$f"
+          done
+      - name: Test actual 15-17 status aggregates and account isolation with SQLite
+        run: php tests/stage23-hub.php
+      - name: Test version-pinned V2 recovery, modified-file refusal and private backups
+        run: php tests/stage24-statistics.php
+      - name: Verify exact fixed release hashes and no schema mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from hashlib import sha1
+          expected={
+              'portal_private/hub23.php':'ed723864bc281554e99ccc30cdd83e7a73e3301e',
+              'public_html/pusat-operasional23.php':'61fb69da867fc21983aeecaf27ca707287652ceb',
+          }
+          for path,sha in expected.items():
+              data=Path(path).read_bytes()
+              actual=sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+              assert actual==sha,(path,actual)
+          recovery=Path('portal_private/stats24_repair.php').read_text()
+          installer=Path('public_html/perbaiki-statistik24.php').read_text()
+          engine=Path('portal_private/hub23.php').read_text()
+          assert '$key=(string)$stage;' in engine
+          assert 'h23_ready($key)' in engine
+          assert 'by_stage' in engine
+          assert 'stats24_backups' in recovery
+          assert 's24_install' in recovery
+          assert 'require_super_admin()' in installer and 'verify_csrf()' in installer
+          assert 'CREATE TABLE' not in installer and 'ALTER TABLE' not in installer
+          print('Stage24 pinned source hashes, strict PHP key fix and protected installer passed')
+          PY
+      - name: Build a new-files-only package for cPanel
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage24_pkg
+          mkdir -p stage24_pkg/portal_private/recovery24 stage24_pkg/public_html paket
+          cp portal_private/hub23.php stage24_pkg/portal_private/recovery24/hub23.php
+          cp public_html/pusat-operasional23.php stage24_pkg/portal_private/recovery24/pusat-operasional23.php
+          cp portal_private/stats24_repair.php stage24_pkg/portal_private/
+          cp public_html/perbaiki-statistik24.php stage24_pkg/public_html/
+          cat > stage24_pkg/BACA-TAHAP24.txt <<'HELP'
+          SMARTCIKOKO TAHAP 24 — PERBAIKAN STATISTIK PUSAT OPERASIONAL
+          1. Backup website, database Pegawai dan SmartApp, konfigurasi, MFA.
+          2. cPanel File Manager: Upload ZIP ke /home/datd1747/.
+          3. Extract ZIP di /home/datd1747/ (jangan di public_html).
+          4. Login Super Admin menggunakan Google Authenticator.
+          5. Buka https://datawebs.my.id/perbaiki-statistik24.php
+          6. Jika kedua file V2 dikenali, klik Perbaiki Statistik Tahap 24.
+          7. Buka https://datawebs.my.id/pusat-operasional23.php?v=24
+          8. Lihat angka Draf, Dalam Proses, Perbaikan dan Selesai,
+             serta rekap Tahap 15, 16, 17 per sumber.
+          9. Jika masih belum terbaca, kirim screenshot dan cek log PHP.
+          10. Uji akun dummy biasa dan Super Admin sebelum penggunaan nyata.
+          11. Setelah berhasil, hapus public_html/perbaiki-statistik24.php
+              dan ZIP dari hosting. Jangan hapus backup privat.
+          Kandidat hanya di portal_private/recovery24 dan TIDAK menimpa
+          file saat Extract. Installer mencadangkan file asli ke
+          portal_private/stats24_backups sebelum mengganti.
+          Jika versi berbeda, penggantian DITOLAK.
+          Tidak perlu SQL, tidak mengubah login, MFA, Beranda, Tahap19–22.
+          HELP
+          rm -f paket/SmartCikoko-TAHAP24-PERBAIKAN-STATISTIK.zip
+          (cd stage24_pkg && zip -q -X -r ../paket/SmartCikoko-TAHAP24-PERBAIKAN-STATISTIK.zip .)
+          unzip -t paket/SmartCikoko-TAHAP24-PERBAIKAN-STATISTIK.zip
+          for f in portal_private/recovery24/hub23.php portal_private/recovery24/pusat-operasional23.php portal_private/stats24_repair.php public_html/perbaiki-statistik24.php; do
+            unzip -Z1 paket/SmartCikoko-TAHAP24-PERBAIKAN-STATISTIK.zip | grep -Fxq "$f"
+          done
+          if unzip -Z1 paket/SmartCikoko-TAHAP24-PERBAIKAN-STATISTIK.zip | grep -Eq '^(portal_private/hub23\.php|public_html/pusat-operasional23\.php|public_html/index\.php|public_html/super-admin-satu\.php|public_html/pusat-laporan\.php|portal_private/(bootstrap|auth|verification19|review22|tasks21)\.php)$'; then
+            echo 'ERROR: ZIP must not overwrite existing site files at extract'
+            exit 1
+          fi
+      - name: Commit package to GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP24-PERBAIKAN-STATISTIK.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Release SmartCikoko Stage24 safe report statistics fix"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP24-PERBAIKAN-STATISTIK
+          path: paket/SmartCikoko-TAHAP24-PERBAIKAN-STATISTIK.zip
+          retention-days: 30
