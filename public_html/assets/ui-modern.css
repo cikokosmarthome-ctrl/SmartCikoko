@@ -1,0 +1,156 @@
+/* SmartCikoko Design System 2026 · unified all-page compact experience.
+   Keep each page's native HTML, security, forms and links intact. */
+:root{color-scheme:light;--sc-navy:#102f4a;--sc-blue:#176a98;--sc-ink:#17374e;--sc-muted:#6b8395;--sc-line:#dce6ed;--sc-bg:#f5f8fa;--sc-card:#fff;--sc-gold:#d9ac62}
+html{min-height:100%;scroll-behavior:smooth;scroll-padding-top:76px}
+html,body{margin:0}
+body.sc-body{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--sc-bg);color:var(--sc-ink);font:12px/1.55 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;overflow-x:hidden}
+body.sc-body *{box-sizing:border-box}
+body.sc-body :is(button,input,select,textarea){font:inherit}
+body.sc-body :is(a,button,input,select,textarea,summary):focus-visible{outline:3px solid var(--sc-gold);outline-offset:3px}
+body.sc-body > :is(.ribbon,.gov,.govbar,.govtop,.topline){display:none}
+body.sc-body > header{position:sticky!important;top:0;z-index:70;flex-shrink:0;background:#fff;border-bottom:1px solid var(--sc-line);box-shadow:0 3px 17px #1239520b}
+body.sc-body > header :is(.container,.wrap,.nav-inner,.barinner,.head,.headinner,.nav,.bar){max-width:1200px;box-sizing:border-box}
+body.sc-body > header :is(.head,.headinner,.barinner,.nav-inner,.bar){min-height:58px;padding-top:7px;padding-bottom:7px;gap:13px}
+body.sc-body > header :is(.brand,.brand b,.brand strong){letter-spacing:0}
+body.sc-body > header .brand strong,body.sc-body > header .brand b{font-size:13px;line-height:1.25}
+body.sc-body > header .brand small{font-size:9px;line-height:1.4}
+body.sc-body > header :is(nav,.navlinks){gap:3px;align-items:center}
+body.sc-body > header nav a,body.sc-body > header .navlinks a{padding:8px 10px;min-height:32px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:750;white-space:nowrap;border-radius:7px}
+body.sc-body > header nav a:focus-visible{outline-offset:0}
+body.sc-body > :is(main,.main){flex:1 0 auto;min-width:0}
+body.sc-body > footer{flex-shrink:0;margin-top:auto!important;min-height:42px;display:block;padding:12px 0!important;background:var(--sc-navy);color:#d4e6ee;font-size:10px}
+body.sc-body > footer .wrap,body.sc-body > footer .container{max-width:1200px}
+body.sc-body > footer :is(.footgrid,.footer-grid){gap:14px}
+body.sc-body > footer .footgrid h3{font-size:11px;margin:0 0 5px}
+body.sc-body > footer .footgrid p,body.sc-body > footer .footgrid a{font-size:10px;line-height:1.45;margin:3px 0;color:#c4dce8}
+body.sc-body > footer .copyright{margin-top:8px;padding-top:8px;padding-bottom:0;font-size:9px}
+body.sc-body :is(.container,.wrap){max-width:1200px}
+body.sc-body :is(.panel,.focus-card,.metric,.card){box-shadow:0 4px 21px #143f5a09}
+body.sc-body :is(input,select,textarea){color:var(--sc-ink)}
+body.sc-body :is(.btn,.button,button[type=submit]){transition:background .14s ease,border-color .14s ease,transform .14s ease}
+body.sc-body :is(.btn,.button):hover{transform:none}
+body.sc-body > main :is(.section,.panel){scroll-margin-top:76px}
+body.sc-body .empty{line-height:1.55}
+body.sc-body :is(table,.native-table,.scroll){max-width:100%}
+body.sc-body :is(table){font-size:11px}
+body.sc-body :is(table th,table td){padding:9px 12px}
+body.sc-body .pagination{min-height:26px}
+body.sc-body :is(.hero h1,.hero-inner h1,.hero-content h1,.banner h1){letter-spacing:-.6px}
+
+/* Public portal (index.php handles home, info, staff and citizen routes). */
+body.sc-page-index{background:#f8fafc}
+body.sc-page-index > header .headinner{min-height:61px}
+body.sc-page-index .hero{background:linear-gradient(118deg,#f5f9fc,#e8f2f9);color:var(--sc-navy);border-bottom:1px solid var(--sc-line)}
+body.sc-page-index .hero-grid{min-height:340px;grid-template-columns:minmax(0,1.1fr) minmax(285px,.9fr);gap:27px;padding-top:28px;padding-bottom:30px}
+body.sc-page-index .hero h1{font-size:clamp(26px,3.25vw,41px);line-height:1.16;margin:10px 0 12px;max-width:650px;color:var(--sc-navy)}
+body.sc-page-index .hero h1 em{color:var(--sc-blue)}
+body.sc-page-index .hero p{font-size:12px;line-height:1.65;color:#496c84;margin:0}
+body.sc-page-index .eyebrow{font-size:10px}
+body.sc-page-index .hero-visual{min-height:270px;border-radius:15px 15px 36px 15px}
+body.sc-page-index .hero .buttons{margin-top:17px;gap:9px}
+body.sc-page-index .hero .btn{min-height:38px;padding:9px 14px;font-size:11px}
+body.sc-page-index .hero-meta{margin-top:14px;font-size:10px}
+body.sc-page-index .hero-plate strong{font-size:18px}
+body.sc-page-index .hero-graphic{width:106px;height:106px;top:38%;border-width:4px;border-radius:24px}
+body.sc-page-index .hero-graphic:before{font-size:38px}
+body.sc-page-index .section{padding-top:35px;padding-bottom:38px}
+body.sc-page-index .section-top{margin-bottom:16px}
+body.sc-page-index .section-top h2{font-size:clamp(20px,2.7vw,27px)}
+body.sc-page-index .section-top p{font-size:12px}
+body.sc-page-index .cards{gap:11px}
+body.sc-page-index .service{padding:15px 16px;gap:6px;min-height:128px;border-radius:9px}
+body.sc-page-index .service-icon{width:38px;height:38px;font-size:19px;border-radius:9px;margin:0}
+body.sc-page-index .service strong{font-size:13px}
+body.sc-page-index .service p{font-size:11px;line-height:1.5}
+body.sc-page-index .service span:not(.tag){font-size:11px;margin-top:5px}
+body.sc-page-index .banner{padding:27px 0}
+body.sc-page-index .banner h1{font-size:26px;margin:8px 0}
+body.sc-page-index .panel{padding:18px;border-radius:10px}
+body.sc-page-index .panel h2{font-size:19px}
+body.sc-page-index .profile{padding:14px;margin-bottom:14px}
+body.sc-page-index .profile h2{font-size:19px}
+body.sc-page-index .metrics{gap:8px;margin-bottom:15px}
+body.sc-page-index .metric{padding:11px}
+body.sc-page-index .metric strong{font-size:24px}
+body.sc-page-index .subtitle{margin:12px 0;font-size:19px}
+body.sc-page-index .footgrid{grid-template-columns:2fr 1fr 1fr}
+body.sc-page-index .footer{padding-top:13px!important}
+
+/* Clean up oversized banners and nested page panels across all task modules. */
+body.sc-body:not(.sc-page-index) > :is(.hero,.banner,section.hero){min-height:0}
+body.sc-body:not(.sc-page-index) > .hero :is(.hero-inner,.hero-content,.hero-row){padding-top:17px;padding-bottom:17px;gap:13px;min-height:0}
+body.sc-body:not(.sc-page-index) > .hero h1{font-size:clamp(21px,2.7vw,29px);margin:4px 0 6px}
+body.sc-body:not(.sc-page-index) > .hero p{font-size:11px;line-height:1.45;margin:0}
+body.sc-body:not(.sc-page-index) > main{padding-top:13px;padding-bottom:25px}
+body.sc-body:not(.sc-page-index) :is(.panel,.section){border-radius:9px}
+body.sc-body:not(.sc-page-index) .heading{margin-top:10px;margin-bottom:11px}
+body.sc-body:not(.sc-page-index) .heading h1{font-size:clamp(22px,2.7vw,30px);margin:3px 0}
+body.sc-body:not(.sc-page-index) .heading p{font-size:11px;margin:0}
+body.sc-body:not(.sc-page-index) :is(.panel h2,.section h2){font-size:17px}
+body.sc-body:not(.sc-page-index) :is(.tabs,.filters){margin-bottom:10px}
+body.sc-body:not(.sc-page-index) .disclaimer{font-size:10px;line-height:1.5}
+body.sc-body:not(.sc-page-index) .form textarea{min-height:62px}
+body.sc-body .notice{line-height:1.6}
+
+/* Unified admin: only one tab at a time; deep tools remain inside admin. */
+body.sc-page-super-admin-satu > main{padding-top:9px}
+body.sc-page-super-admin-satu .heading{margin:5px 0 12px}
+body.sc-page-super-admin-satu .heading h1{font-size:24px}
+body.sc-page-super-admin-satu .heading p{display:none}
+body.sc-page-super-admin-satu .section{padding:15px;margin-bottom:10px}
+body.sc-page-super-admin-satu > header nav a.sc-selected{background:#eaf3f9;color:#0d527c}
+body.sc-page-super-admin-satu .actions{grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+body.sc-page-super-admin-satu .actions a{padding:14px;min-height:86px;border-radius:9px}
+body.sc-page-super-admin-satu .actions a:hover,body.sc-page-super-admin-satu .actions a:focus-visible{border-color:#94bfd8;background:#eef7fb}
+body.sc-page-super-admin-satu .actions a b{font-size:12px}
+body.sc-page-super-admin-satu .actions a small{font-size:10px}
+body.sc-page-super-admin-satu [hidden]{display:none!important}
+body.sc-page-super-admin-satu .sc-frame-toolbar{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:10px;flex-wrap:wrap}
+body.sc-page-super-admin-satu .sc-frame-toolbar h2{font-size:17px;margin:0}
+body.sc-page-super-admin-satu .sc-frame-toolbar button{border:1px solid #c9dfe9;background:#f0f7fb;color:#185d87;border-radius:7px;padding:9px 12px;cursor:pointer;font-weight:750}
+body.sc-page-super-admin-satu .sc-admin-frame{border:1px solid var(--sc-line);background:#fff;border-radius:9px;width:100%;height:68vh;min-height:540px;display:block}
+body.sc-page-super-admin-satu .sc-workspace-hint{font-size:10px;color:var(--sc-muted);margin:9px 0 0}
+body.sc-page-super-admin-satu .advanced-links{gap:7px}
+body.sc-page-super-admin-satu .advanced-links a{padding:10px 12px}
+
+/* Embedded modules still run as real same-origin pages and retain backend checks. */
+body.sc-body.sc-embedded{background:#fff;min-height:100%;display:block;overflow-x:hidden}
+body.sc-body.sc-embedded > :is(header,footer,.ribbon,.gov,.govbar,.govtop,.topline){display:none!important}
+body.sc-body.sc-embedded > :is(main,.main){padding:12px 14px!important;margin:0!important;max-width:100%!important;width:100%}
+body.sc-body.sc-embedded > .hero{display:none}
+body.sc-body.sc-embedded .container,body.sc-body.sc-embedded .wrap{max-width:100%;padding-inline:13px}
+body.sc-body.sc-embedded > main .heading{margin:0 0 12px}
+body.sc-body.sc-embedded > main .heading h1{font-size:20px}
+body.sc-body.sc-embedded > main .panel{margin-bottom:11px}
+body.sc-body.sc-embedded > .notice{margin:8px 12px}
+
+/* Every route remains usable on mobile without fixed-width overflow. */
+@media(max-width:990px){
+ body.sc-page-index .hero-grid{grid-template-columns:1fr 1fr;gap:14px}
+ body.sc-page-index .hero-visual{min-height:255px}
+ body.sc-page-super-admin-satu .actions{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:750px){
+ body.sc-body > header :is(.head,.headinner,.barinner,.nav-inner,.bar){flex-wrap:wrap;min-height:52px;gap:7px}
+ body.sc-body > header :is(nav,.navlinks){width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;flex-wrap:nowrap;justify-content:flex-start;padding-bottom:5px}
+ body.sc-body > header nav a,body.sc-body > header .navlinks a{font-size:10px;flex:0 0 auto;min-height:31px;padding:7px 9px}
+ body.sc-page-index .hero-grid{grid-template-columns:1fr;min-height:0;gap:13px;padding-top:23px;padding-bottom:24px}
+ body.sc-page-index .hero h1{font-size:clamp(27px,5vw,36px)}
+ body.sc-page-index .hero-visual{min-height:205px}
+ body.sc-page-index .hero-plate{bottom:15px}
+ body.sc-page-index .hero-plate strong{font-size:16px}
+ body.sc-page-index .section{padding-block:25px}
+ body.sc-page-index .cards{grid-template-columns:1fr 1fr}
+ body.sc-page-index .footgrid{grid-template-columns:1fr 1fr}
+ body.sc-page-super-admin-satu .actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.sc-page-super-admin-satu .sc-admin-frame{height:65vh;min-height:400px}
+}
+@media(max-width:510px){
+ body.sc-page-index .cards{grid-template-columns:1fr}
+ body.sc-page-index .footgrid{grid-template-columns:1fr}
+ body.sc-page-super-admin-satu .actions{grid-template-columns:1fr 1fr}
+ body.sc-page-super-admin-satu .section{padding:11px}
+ body.sc-page-super-admin-satu .actions a{padding:10px;min-height:75px}
+ body.sc-body :is(table th,table td){padding:7px 8px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}body.sc-body *{transition:none!important;animation:none!important}}
