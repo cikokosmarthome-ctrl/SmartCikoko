@@ -115,6 +115,33 @@ function sc_workflow_feed(array $actor):array {
             }else{$unavailable[]='warga';}
         }
     }
+    // Role-limited staff queue: show reference/status only, not applicant identity.
+    $reviewQueue=[];
+    if(function_exists('is_super_admin') &&
+       ((($actor['source']??'')==='smartapp' &&
+         in_array((string)($actor['role']??''),['ptsp','lurah'],true))
+        || is_super_admin($actor))) {
+        require_once __DIR__.'/citizen_requests.php';
+        $reviewActor=t9_actor($actor);
+        if($reviewActor && t9_can_monitor($reviewActor) &&
+          sc_workflow_ready('unified_citizen_requests')) {
+            $q=db('smartapp')->query("SELECT id,reference_no,status,updated_at".
+               " FROM unified_citizen_requests WHERE status IN".
+               " ('diajukan','ditinjau','diverifikasi','revisi')".
+               " ORDER BY updated_at DESC,id DESC LIMIT 30");
+            foreach($q->fetchAll(PDO::FETCH_ASSOC) as $record){
+                $workflow=sc_workflow_progress('warga',(string)$record['status']);
+                $reviewQueue[]=[
+                    'id'=>(int)$record['id'],
+                    'reference'=>(string)$record['reference_no'],
+                    'status_label'=>$workflow['status_label'],
+                    'progress_percent'=>$workflow['progress_percent'],
+                    'updated_at'=>(string)$record['updated_at'],
+                    'web_url'=>'/pengajuan-warga.php?id='.(int)$record['id'],
+                ];
+            }
+        }
+    }
     usort($items,static fn($a,$b)=>strcmp((string)$b['updated_at'],(string)$a['updated_at']));
     usort($events,static fn($a,$b)=>strcmp((string)$b['created_at'],(string)$a['created_at']));
     $items=array_slice($items,0,60);$events=array_slice($events,0,60);
@@ -125,7 +152,7 @@ function sc_workflow_feed(array $actor):array {
         if(!$item['requires_action']&&!$item['administrative_complete'])$summary['under_review']++;
     }
     return [
-      'items'=>$items,'notifications'=>$events,'summary'=>$summary,
+      'items'=>$items,'notifications'=>$events,'review_queue'=>$reviewQueue,'summary'=>$summary,
       'unavailable_modules'=>$unavailable,
       'notice'=>'Notifikasi riwayat ditampilkan di portal/aplikasi saat dibuka atau dimuat ulang. Belum berupa push sistem, SMS atau WhatsApp.',
       'progress_notice'=>'Persentase adalah tonggak alur administratif; bukan estimasi lama proses atau bukti penerbitan surat.',
