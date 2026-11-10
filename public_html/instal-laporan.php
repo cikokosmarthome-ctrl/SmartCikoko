@@ -28,6 +28,7 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'&&!$ready){
             activity_date DATE NOT NULL,
             end_date DATE NULL,
             status ENUM('diajukan','ditinjau','perbaikan','ditutup') NOT NULL DEFAULT 'diajukan',
+            version INT UNSIGNED NOT NULL DEFAULT 1,
             review_note VARCHAR(500) NULL,
             reviewed_by_source VARCHAR(30) NULL,
             reviewed_by_id VARCHAR(100) NULL,
