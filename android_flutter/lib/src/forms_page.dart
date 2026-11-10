@@ -17,6 +17,7 @@ class FormsPage extends StatefulWidget {
 class _FormsPageState extends State<FormsPage> {
   late Future<List<Map<String,dynamic>>> request;
   @override void initState(){super.initState();request = getCatalog();}
+  void retry() => setState(() => request = getCatalog());
   Future<List<Map<String,dynamic>>> getCatalog() async {
     final r=await PortalApi.forms('catalog',token:widget.token);
     return PortalApi.rows(r['data']);
@@ -26,7 +27,13 @@ class _FormsPageState extends State<FormsPage> {
     body:FutureBuilder<List<Map<String,dynamic>>>(
       future:request,builder:(ctx,snap){
         if(!snap.hasData) {
-          if(snap.hasError)return CivicEmpty('Formulir tidak tersedia: '+snap.error.toString());
+          if(snap.hasError)return Center(child:Column(
+            mainAxisSize:MainAxisSize.min,children:[
+              CivicEmpty('Formulir tidak tersedia: '+snap.error.toString()),
+              TextButton.icon(onPressed:retry,icon:const Icon(Icons.refresh),
+                label:const Text('Coba lagi')),
+            ],
+          ));
           return const Center(child:CircularProgressIndicator());
         }
         return ListView(padding:const EdgeInsets.all(18),children:[
