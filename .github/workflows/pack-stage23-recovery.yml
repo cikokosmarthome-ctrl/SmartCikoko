@@ -1,0 +1,123 @@
+name: Perbaikan Tahap 23 Pusat Operasional
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/hub23.php'
+      - 'portal_private/hub23_repair.php'
+      - 'public_html/pusat-operasional23.php'
+      - 'public_html/perbaiki-operasional23.php'
+      - 'tests/stage23-recovery.php'
+      - '.github/workflows/pack-stage23-recovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage23-recovery
+  cancel-in-progress: false
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,pdo_sqlite
+          tools: none
+      - name: Syntax checks for recovered Stage23 code and private installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/hub23.php portal_private/hub23_repair.php public_html/pusat-operasional23.php public_html/perbaiki-operasional23.php; do
+            php -l "$f"
+          done
+      - name: Test guarded widgets, exact release signatures and safe backups
+        run: php tests/stage23-recovery.php
+      - name: Retest all Stage23 role-gated shortcuts
+        run: php tests/stage23-hub.php
+      - name: Verify release signatures and absence of core SQL and auth edits
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          files={
+            'portal_private/hub23.php':'f1a11681a969992a0c8e4fabaea327e3e27a50e3',
+            'public_html/pusat-operasional23.php':'a88d9ad688c798bd1c9a180fd281118017513c41'
+          }
+          for name,expected in files.items():
+              data=Path(name).read_bytes()
+              actual=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+              assert actual==expected,(name,actual)
+          repair=Path('portal_private/hub23_repair.php').read_text()
+          installer=Path('public_html/perbaiki-operasional23.php').read_text()
+          assert 'hub23_repair_backups' in repair
+          assert 'recover23_all' in repair
+          assert 'require_super_admin()' in installer
+          assert 'verify_csrf()' in installer
+          assert 'CREATE TABLE' not in installer and 'ALTER TABLE' not in installer
+          assert 'hub23.php' in repair and 'pusat-operasional23.php' in repair
+          print('Exact fixed releases match safe verified recovery sources')
+          PY
+      - name: Assemble new-files-only cPanel recovery ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage23_recovery_pkg
+          mkdir -p stage23_recovery_pkg/portal_private/recovery23 stage23_recovery_pkg/public_html paket
+          cp portal_private/hub23.php stage23_recovery_pkg/portal_private/recovery23/hub23.php
+          cp public_html/pusat-operasional23.php stage23_recovery_pkg/portal_private/recovery23/pusat-operasional23.php
+          cp portal_private/hub23_repair.php stage23_recovery_pkg/portal_private/hub23_repair.php
+          cp public_html/perbaiki-operasional23.php stage23_recovery_pkg/public_html/perbaiki-operasional23.php
+          cat > stage23_recovery_pkg/BACA-PERBAIKAN23.txt <<'HELP'
+          SMARTCIKOKO - PERBAIKAN TAHAP 23 V2 (HALAMAN PUTIH)
+          Status awal: Installer Tahap 23 berhasil, Pusat Operasional menampilkan
+          "Pusat Operasional belum siap. Periksa pemasangan modul."
+
+          1. Backup website dan kedua database serta kunci MFA lebih dulu.
+          2. cPanel File Manager -> /home/datd1747/
+          3. Upload SmartCikoko-PERBAIKAN-TAHAP23-V2.zip di direktori itu.
+          4. Extract di /home/datd1747/ (BUKAN di dalam public_html).
+          5. Login Super Admin menggunakan Google Authenticator.
+          6. Buka https://datawebs.my.id/perbaiki-operasional23.php
+          7. Jika kedua versi lama dikenali, klik Perbaiki Pusat Operasional.
+          8. Buka https://datawebs.my.id/pusat-operasional23.php?v=2
+          9. Jika ada peringatan ringkasan, kirim tangkapan layar.
+          10. Setelah berhasil, hapus public_html/perbaiki-operasional23.php
+              dan ZIP dari hosting; simpan backup di folder privat.
+          11. Jangan menghapus folder portal_private/hub23_repair_backups/.
+
+          ZIP hanya menambah berkas pemulihan. Installer memeriksa SHA file
+          lama dan hanya mengganti dua file Tahap23 yang dikenal, setelah
+          backup. File yang dimodifikasi di hosting TIDAK DITIMPA.
+          Tidak perlu SQL dan TIDAK mengubah Beranda, Login, MFA, Tahap19–22.
+          HELP
+          rm -f paket/SmartCikoko-PERBAIKAN-TAHAP23-V2.zip
+          (cd stage23_recovery_pkg && zip -q -X -r ../paket/SmartCikoko-PERBAIKAN-TAHAP23-V2.zip .)
+          unzip -t paket/SmartCikoko-PERBAIKAN-TAHAP23-V2.zip
+          for f in portal_private/recovery23/hub23.php portal_private/recovery23/pusat-operasional23.php portal_private/hub23_repair.php public_html/perbaiki-operasional23.php; do
+            unzip -Z1 paket/SmartCikoko-PERBAIKAN-TAHAP23-V2.zip | grep -Fxq "$f"
+          done
+          if unzip -Z1 paket/SmartCikoko-PERBAIKAN-TAHAP23-V2.zip | grep -Eq '^(portal_private/hub23\.php|public_html/pusat-operasional23\.php|public_html/index\.php|public_html/super-admin-satu\.php|public_html/pusat-laporan\.php|portal_private/(bootstrap|auth|verification19|review22)\.php)$'; then
+            echo 'Recovery ZIP should never overwrite existing core/Stage23 files on extraction'
+            exit 1
+          fi
+      - name: Publish Stage23 verified recovery ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-PERBAIKAN-TAHAP23-V2.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage23 V2 safe dashboard recovery ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-PERBAIKAN-TAHAP23-V2
+          path: paket/SmartCikoko-PERBAIKAN-TAHAP23-V2.zip
+          retention-days: 30
