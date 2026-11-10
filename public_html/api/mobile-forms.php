@@ -49,6 +49,11 @@ try {
             ($input['submit']??false)===true);
         respond(['ok'=>true,'message'=>'Perubahan formulir tersimpan.']);
     }
+    if($operation==='review'&&$method==='POST'){
+        mobile_form_review($actor,$group,(int)($input['id']??0),
+            (string)($input['status']??''),trim((string)($input['note']??'')));
+        respond(['ok'=>true,'message'=>'Hasil pemeriksaan tercatat dalam riwayat.']);
+    }
     respond(['ok'=>false,'error'=>'Operasi tidak tersedia.'],405);
 } catch(JsonException $e){
     respond(['ok'=>false,'error'=>'JSON tidak valid.'],400);

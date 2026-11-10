@@ -5,7 +5,8 @@ require_once __DIR__.'/workflow_progress.php';
 function sc_workflow_ready(string $table):bool {
     $allow=['unified_citizen_requests','unified_citizen_request_history',
       'unified_detailed_forms16','unified_detailed_form_history16',
-      'unified_field_reports17','unified_field_history17','unified_citizen_files'];
+      'unified_field_reports17','unified_field_history17','unified_citizen_files',
+      'unified_report_intake','unified_report_intake_history'];
     if(!in_array($table,$allow,true))return false;
     try {
         db('smartapp')->query('SELECT 1 FROM '.$table.' LIMIT 1');
@@ -60,6 +61,42 @@ function sc_workflow_feed(array $actor):array {
             ];
         }
     }
+    // Stage 15 general report intake is a distinct existing web workflow.
+    // Include its real rows/history in the same read-only cross-platform timeline.
+    if(sc_workflow_ready('unified_report_intake')&&sc_workflow_ready('unified_report_intake_history')){
+        $q=db('smartapp')->prepare('SELECT id,category,title,status,created_at,updated_at'.
+            ' FROM unified_report_intake WHERE actor_source=? AND actor_id=?'.
+            ' ORDER BY id DESC LIMIT 30');
+        $q->execute($identity);
+        foreach($q->fetchAll(PDO::FETCH_ASSOC) as $row){
+            $progress=sc_workflow_progress('laporan',(string)$row['status']);
+            $items[]=array_merge([
+               'id'=>(int)$row['id'],'group'=>'laporan',
+               'reference'=>'Laporan #'.(int)$row['id'],
+               'kind'=>(string)$row['category'],
+               'updated_at'=>(string)$row['updated_at'],
+               'created_at'=>(string)$row['created_at'],
+               'web_url'=>'/pusat-laporan.php?kategori='.rawurlencode((string)$row['category']),
+            ],$progress);
+        }
+        $q=db('smartapp')->prepare('SELECT h.report_id,h.new_status,h.note,h.created_at,a.category'.
+            ' FROM unified_report_intake_history h JOIN unified_report_intake a'.
+            ' ON a.id=h.report_id WHERE a.actor_source=? AND a.actor_id=?'.
+            ' ORDER BY h.created_at DESC,h.id DESC LIMIT 40');
+        $q->execute($identity);
+        foreach($q->fetchAll(PDO::FETCH_ASSOC) as $row){
+            $progress=sc_workflow_progress('laporan',(string)$row['new_status']);
+            $events[]=[
+               'key'=>'laporan:'.(int)$row['report_id'].':'.(string)$row['created_at'],
+               'group'=>'laporan','request_id'=>(int)$row['report_id'],
+               'title'=>'Laporan '.(string)$row['category'].' · '.$progress['status_label'],
+               'message'=>mb_substr(trim((string)$row['note']),0,240),
+               'status'=>(string)$row['new_status'],
+               'progress_percent'=>$progress['progress_percent'],
+               'created_at'=>(string)$row['created_at'],
+            ];
+        }
+    } else {$unavailable[]='laporan';}
     // Citizen requests use the existing Stage 9 ownership and Stage 6 access check.
     if(($actor['source']??'')==='smartapp'&&($actor['role']??'')==='warga') {
         require_once __DIR__.'/citizen_requests.php';

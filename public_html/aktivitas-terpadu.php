@@ -15,7 +15,7 @@ header('Cache-Control: private,no-store');
 <meta name="robots" content="noindex,nofollow"><title>Pusat Aktivitas | SmartCikoko</title>
 <link rel="stylesheet" href="/assets/aktivitas-terpadu.css">
 </head><body class="sc-body sc-page-aktivitas-terpadu">
-<header class="activity-head"><div class="activity-wrap"><a href="/" aria-label="Beranda Kelurahan Cikoko">← Kelurahan Cikoko</a><nav aria-label="Navigasi pusat aktivitas"><a href="/?page=dashboard">Ruang Kerja</a><a href="/pengajuan-warga.php">Pengajuan Surat</a><a href="/formulir-pegawai16.php">Formulir Pegawai</a><a href="/laporan-wilayah17.php">Laporan Wilayah</a></nav></div></header>
+<header class="activity-head"><div class="activity-wrap"><a href="/" aria-label="Beranda Kelurahan Cikoko">← Kelurahan Cikoko</a><nav aria-label="Navigasi pusat aktivitas"><a href="/cikoko-smart.php">Cikoko Smart</a><a href="/?page=dashboard">Ruang Kerja</a><a href="/pengajuan-warga.php">Pengajuan Surat</a><a href="/formulir-pegawai16.php">Formulir Pegawai</a><a href="/laporan-wilayah17.php">Laporan Wilayah</a></nav></div></header>
 <main class="activity-wrap activity-main">
 <div class="activity-intro"><span class="activity-kicker">PELAYANAN DIGITAL TERPADU</span><h1>Progres dan Notifikasi Akun</h1><p>Halo, <?=h((string)$viewer['name'])?>. Laporan dan pengajuan yang Anda miliki tampil dari data yang sama dengan aplikasi SmartCikoko.</p></div>
 <div class="activity-metrics" aria-label="Ringkasan aktivitas">

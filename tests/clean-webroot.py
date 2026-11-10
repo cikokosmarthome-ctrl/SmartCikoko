@@ -22,7 +22,8 @@ needed = {
     'keamanan-superadmin.php','unduh-berkas.php',
     'assets/ui-modern.css','assets/ui-modern.js','assets/admin-modern.js',
     'assets/site-public-v3.css', 'aktivitas-terpadu.php',
-    'assets/aktivitas-terpadu.css','api/citizen-upload.php'
+    'assets/aktivitas-terpadu.css','api/citizen-upload.php',
+    'cikoko-smart.php','assets/cikoko-smart.css','assets/cikoko-smart.js'
 }
 assert needed<=relative,sorted(needed-relative)
 assert not any(
@@ -124,6 +125,16 @@ assert "uploaded secara privat" not in upload.lower() or "t10_upload(" in upload
 dashboard=(ROOT/'aktivitas-terpadu.php').read_text()
 assert "sc_workflow_feed(" in dashboard and "<progress" in dashboard
 assert "h($notice['message'])" in dashboard
+smart=(ROOT/'cikoko-smart.php').read_text()
+assert 'sc_smart_catalog($viewer)' in smart
+assert 'sc_workflow_feed($viewer)' in smart
+assert 'is_super_admin($viewer)' in smart
+assert 'lr_native_counts()' in smart
+assert '/aktivitas-terpadu.php' in smart
+assert '/cikoko-smart.php' in (ROOT/'index.php').read_text()
+assert '/cikoko-smart.php' in (ROOT/'super-admin-satu.php').read_text()
+assert 'group' in (ROOT/'assets/cikoko-smart.js').read_text()
+
 
 assert 'assets/cikoko-office-illustration.svg' in relative
 

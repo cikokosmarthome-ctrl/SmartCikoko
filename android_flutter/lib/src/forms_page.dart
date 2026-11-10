@@ -37,7 +37,7 @@ class _FormsPageState extends State<FormsPage> {
           return const Center(child:CircularProgressIndicator());
         }
         return ListView(padding:const EdgeInsets.all(18),children:[
-          const CivicPageTitle(title:'Pilih Laporan',subtitle:'Formulir sesuai hak akses akun Anda.'),
+          const CivicPageTitle(title:'Laporan Cikoko Smart',subtitle:'Formulir Pegawai, Wilayah, dan Ringkasan dari backend yang sama.'),
           const SizedBox(height:18),
           if(snap.data!.isEmpty)const CivicEmpty('Belum ada formulir untuk peran akun ini.'),
           for(final schema in snap.data!) Padding(
@@ -95,8 +95,10 @@ class _FormRecordsPageState extends State<FormRecordsPage> {
           const CivicPageTitle(title:'Laporan Saya',
             subtitle:'Draf, pengajuan, dan status dari akun ini.'),
           const SizedBox(height:15),
-          FilledButton.icon(onPressed:()=>openForm(),icon:const Icon(Icons.add),
-            label:const Text('Buat Laporan Baru')),
+          if(widget.schema['can_create']==true)
+            FilledButton.icon(onPressed:()=>openForm(),icon:const Icon(Icons.add),
+              label:Text(widget.schema['group']=='laporan'
+                ?'Buat Ringkasan Laporan':'Buat Laporan Baru')),
           const SizedBox(height:20),
           if(rows.isEmpty)const CivicEmpty('Belum ada laporan. Mulai dengan tombol di atas.'),
           for(final row in rows) Padding(padding:const EdgeInsets.only(bottom:9),
@@ -140,10 +142,16 @@ class _FormEditorPageState extends State<FormEditorPage> {
   int version=1;
   String status='draf';
   Map<String,dynamic> progress={};
+  bool canEditRecord=false,canReviewRecord=false;
+  String reviewStatus='ditinjau';
+  final reviewNote=TextEditingController();
+  String existingReviewNote='';
   List<Map<String,dynamic>> get fields=>PortalApi.rows(widget.schema['fields']);
   String get group=>(widget.schema['group']??'').toString();
   String get kind=>(widget.schema['kind']??'').toString();
-  bool get editable=>widget.id==null||status=='draf'||status=='perbaikan';
+  bool get editable=>widget.id==null
+      ?widget.schema['can_create']==true
+      :canEditRecord;
   @override void initState(){
     super.initState();nonce=newFormNonce();
     for(final f in fields)inputs[(f['key']??'').toString()]=TextEditingController();
@@ -157,6 +165,9 @@ class _FormEditorPageState extends State<FormEditorPage> {
       final data=Map<String,dynamic>.from(r['data'] as Map);
       status=(data['status']??'draf').toString();
       progress=Map<String,dynamic>.from(data['progress'] as Map? ?? {});
+      canEditRecord=data['can_edit']==true;
+      canReviewRecord=data['can_review']==true;
+      existingReviewNote=(data['review_note']??'').toString();
       version=(data['version'] as num?)?.toInt()??1;
       final values=Map<String,dynamic>.from(data['values'] as Map? ?? {});
       for(final f in fields){
@@ -166,7 +177,11 @@ class _FormEditorPageState extends State<FormEditorPage> {
     }catch(e){error='Rincian formulir belum bisa dibuka: '+e.toString();}
     if(mounted)setState(()=>loading=false);
   }
-  @override void dispose(){for(final c in inputs.values){c.dispose();}super.dispose();}
+  @override void dispose(){
+    for(final c in inputs.values){c.dispose();}
+    reviewNote.dispose();
+    super.dispose();
+  }
   Future<void> chooseDate(String field,String type)async{
     if(type=='time'){
       final t=await showTimePicker(context:context,initialTime:TimeOfDay.now());
@@ -232,12 +247,47 @@ class _FormEditorPageState extends State<FormEditorPage> {
     }catch(e){if(mounted)setState(()=>error=e.toString());}
     if(mounted)setState(()=>saving=false);
   }
+  Future<void> review() async {
+    if(saving||widget.id==null||!canReviewRecord)return;
+    if(reviewStatus=='perbaikan'&&reviewNote.text.trim().length<8){
+      if(mounted)setState(()=>error='Tuliskan alasan perbaikan minimal 8 karakter.');
+      return;
+    }
+    final confirmed=await showDialog<bool>(
+      context:context,
+      builder:(ctx)=>AlertDialog(
+        title:const Text('Simpan hasil pemeriksaan?'),
+        content:Text('Status laporan akan menjadi $reviewStatus. '
+          'Perubahan ini tercatat pada audit server.'),
+        actions:[
+          TextButton(onPressed:()=>Navigator.pop(ctx,false),
+            child:const Text('Batal')),
+          FilledButton(onPressed:()=>Navigator.pop(ctx,true),
+            child:const Text('Konfirmasi')),
+        ],
+      ),
+    );
+    if(confirmed!=true||!mounted)return;
+    setState((){saving=true;error=null;});
+    try{
+      await PortalApi.forms('review',method:'POST',token:widget.token,
+        body:{'group':group,'id':widget.id,'status':reviewStatus,
+          'note':reviewNote.text.trim()});
+      if(!mounted)return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content:Text('Hasil pemeriksaan tercatat di server.')));
+      Navigator.pop(context,true);
+    }catch(e){if(mounted)setState(()=>error=e.toString());}
+    if(mounted)setState(()=>saving=false);
+  }
   @override Widget build(BuildContext context)=>Scaffold(
     appBar:AppBar(title:Text(widget.id==null?'Formulir Baru':'Laporan #'+widget.id.toString())),
     body:loading?const Center(child:CircularProgressIndicator()):
       Form(key:key,child:ListView(padding:const EdgeInsets.all(18),children:[
         CivicPageTitle(title:(widget.schema['title']??'').toString(),
-          subtitle:widget.id==null?'Simpan draf atau ajukan laporan.':'Status: '+status),
+          subtitle:widget.id==null
+              ?(group=='laporan'?'Isi dan kirim ringkasan laporan.':'Simpan draf atau ajukan laporan.')
+              :'Status: '+status),
         if(widget.id!=null&&progress.isNotEmpty)...[
           const SizedBox(height:10),
           Row(children:[
@@ -256,15 +306,49 @@ class _FormEditorPageState extends State<FormEditorPage> {
           child:Text((widget.schema['description']??'').toString(),
             style:const TextStyle(color:CivicColors.muted,fontSize:12)))),
         const SizedBox(height:18),
+        if(existingReviewNote.isNotEmpty)
+          Card(child:Padding(padding:const EdgeInsets.all(14),
+            child:Text('Catatan pemeriksa: $existingReviewNote'))),
         for(final item in fields)...[input(item),const SizedBox(height:12)],
         if(error!=null)Text(error!,style:const TextStyle(color:Colors.red)),
         if(editable)...[
           FilledButton.icon(onPressed:saving?null:()=>save(true),
             icon:const Icon(Icons.send),label:const Text('Ajukan Laporan')),
           const SizedBox(height:8),
-          OutlinedButton.icon(onPressed:saving?null:()=>save(false),
-            icon:const Icon(Icons.save_outlined),label:const Text('Simpan Draf')),
-        ] else const CivicEmpty('Laporan sudah diajukan. Tunggu hasil pemeriksaan.'),
+          if(group!='laporan')
+            OutlinedButton.icon(onPressed:saving?null:()=>save(false),
+              icon:const Icon(Icons.save_outlined),label:const Text('Simpan Draf')),
+        ] else if(widget.id!=null)
+          const CivicEmpty('Laporan dalam proses. Hanya pemilik yang dapat memperbaiki saat diminta.'),
+        if(canReviewRecord&&widget.id!=null)...[
+          const SizedBox(height:16),
+          const Divider(),
+          const Text('Pemeriksaan Super Admin',
+            style:TextStyle(fontSize:16,fontWeight:FontWeight.w900)),
+          const Text('Keputusan administratif; bukan tanda tangan atau pengesahan surat.',
+            style:TextStyle(fontSize:11,color:CivicColors.muted)),
+          const SizedBox(height:9),
+          DropdownButtonFormField<String>(
+            initialValue:reviewStatus,
+            decoration:const InputDecoration(labelText:'Tahap selanjutnya'),
+            items:const [
+              DropdownMenuItem(value:'ditinjau',child:Text('Sedang Ditinjau')),
+              DropdownMenuItem(value:'perbaikan',child:Text('Minta Perbaikan')),
+              DropdownMenuItem(value:'ditutup',child:Text('Tutup Administratif')),
+            ],
+            onChanged:saving?null:(value)=>setState(()=>reviewStatus=value??'ditinjau'),
+          ),
+          const SizedBox(height:9),
+          TextField(controller:reviewNote,maxLength:500,maxLines:3,
+            decoration:const InputDecoration(
+              labelText:'Catatan Pemeriksa',
+              hintText:'Sebutkan bagian yang perlu diperbaiki atau hasil tinjauan')),
+          const SizedBox(height:9),
+          FilledButton.icon(
+            onPressed:saving?null:review,
+            icon:const Icon(Icons.fact_check_outlined),
+            label:const Text('Simpan Hasil Pemeriksaan')),
+        ],
         if(saving)const LinearProgressIndicator(),
         const SizedBox(height:30),
       ])),

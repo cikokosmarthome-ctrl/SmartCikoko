@@ -48,7 +48,7 @@ function sa15_progress_status(string $s):string{return ['belum'=>'Belum','berjal
 <link rel="stylesheet" href="/assets/super-admin-satu.css"></head><body>
 <div class="govtop"><div class="wrap">PEMPROV DKI JAKARTA <span>KECAMATAN PANCORAN · KELURAHAN CIKOKO</span></div></div>
 <header class="bar"><div class="wrap barinner"><a class="brand" href="/"><span>KC</span><b>SMARTCIKOKO<small>Pusat Super Administrator</small></b></a>
-<nav><a href="#ringkasan">Ringkasan</a><a href="#laporan">Laporan</a><a href="#modul">Modul</a><a href="#kemajuan">Progres</a><a href="#pengaturan">Keamanan</a><a href="/pusat-laporan.php">Input Laporan</a></nav>
+<nav><a href="#ringkasan">Ringkasan</a><a href="#laporan">Laporan</a><a href="#modul">Modul</a><a href="#kemajuan">Progres</a><a href="#pengaturan">Keamanan</a><a href="/cikoko-smart.php">Cikoko Smart</a><a href="/pusat-laporan.php">Input Laporan</a></nav>
 </div></header>
 <main class="wrap">
 <div class="heading">

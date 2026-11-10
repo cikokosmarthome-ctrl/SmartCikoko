@@ -15,6 +15,13 @@ on:
       - 'public_html/assets/aktivitas-terpadu.css'
       - 'portal_private/workflow_progress.php'
       - 'portal_private/workflow_feed.php'
+      - 'portal_private/cikoko_smart_catalog.php'
+      - 'portal_private/unified_reports.php'
+      - 'public_html/cikoko-smart.php'
+      - 'public_html/assets/cikoko-smart.css'
+      - 'public_html/assets/cikoko-smart.js'
+      - 'tests/cikoko-smart-catalog.php'
+      - 'docs/CIKOKO-SMART-INTEGRASI-LAPORAN.md'
       - 'portal_private/citizen_followup.php'
       - 'tests/workflow-progress.php'
       - 'tests/stage10-unit.php'
@@ -46,15 +53,18 @@ jobs:
           set -euo pipefail
           python3 scripts/build_clean_public_html.py --output _webroot_replacement
           cp docs/PUBLIC-HTML-BARU-UNIFIED.md _webroot_replacement/BACA-SEBELUM-GANTI.txt
+          cp docs/CIKOKO-SMART-INTEGRASI-LAPORAN.md _webroot_replacement/PANDUAN-CIKOKO-SMART.txt
           mkdir -p _webroot_replacement/portal_private
           cp portal_private/mobile_forms_api.php _webroot_replacement/portal_private/mobile_forms_api.php
           cp portal_private/workflow_progress.php _webroot_replacement/portal_private/workflow_progress.php
           cp portal_private/workflow_feed.php _webroot_replacement/portal_private/workflow_feed.php
+          cp portal_private/cikoko_smart_catalog.php _webroot_replacement/portal_private/cikoko_smart_catalog.php
           mkdir -p _webroot_replacement/PRIVATE-PATCH-REVIEW
           cp portal_private/citizen_followup.php _webroot_replacement/PRIVATE-PATCH-REVIEW/citizen_followup.php
           php -l _webroot_replacement/portal_private/mobile_forms_api.php
           php -l _webroot_replacement/portal_private/workflow_progress.php
           php -l _webroot_replacement/portal_private/workflow_feed.php
+          php -l _webroot_replacement/portal_private/cikoko_smart_catalog.php
           php -l _webroot_replacement/PRIVATE-PATCH-REVIEW/citizen_followup.php
       - name: Verify all active routes, one admin and sticky header/bottom footer
         run: python3 tests/clean-webroot.py _webroot_replacement
@@ -70,12 +80,15 @@ jobs:
           set -euo pipefail
           node --check _webroot_replacement/public_html_baru/assets/ui-modern.js
           node --check _webroot_replacement/public_html_baru/assets/admin-modern.js
+          node --check _webroot_replacement/public_html_baru/assets/cikoko-smart.js
       - name: Regression tests of real report intake, form auth and operational dashboard
         shell: bash
         run: |
           set -euo pipefail
           php tests/workflow-progress.php
           php tests/stage10-unit.php
+          php tests/cikoko-smart-catalog.php
+          php tests/mobile-forms-api.php
           php tests/stage16-forms.php
           php tests/stage23-hub.php
           php tests/compact-ui.php
@@ -86,7 +99,7 @@ jobs:
           set -euo pipefail
           mkdir -p paket
           rm -f paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip
-          (cd _webroot_replacement && zip -q -X -r ../paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip public_html_baru portal_private PRIVATE-PATCH-REVIEW BACA-SEBELUM-GANTI.txt MANIFEST-DEPLOY.json)
+          (cd _webroot_replacement && zip -q -X -r ../paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip public_html_baru portal_private PRIVATE-PATCH-REVIEW BACA-SEBELUM-GANTI.txt PANDUAN-CIKOKO-SMART.txt MANIFEST-DEPLOY.json)
           unzip -t paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip
           python3 - <<'PY'
           from pathlib import Path
@@ -105,16 +118,21 @@ jobs:
               assert 'portal_private/mobile_forms_api.php' in names
               assert 'portal_private/workflow_progress.php' in names
               assert 'portal_private/workflow_feed.php' in names
+              assert 'portal_private/cikoko_smart_catalog.php' in names
+              assert 'public_html_baru/cikoko-smart.php' in names
+              assert 'public_html_baru/assets/cikoko-smart.css' in names
+              assert 'public_html_baru/assets/cikoko-smart.js' in names
               assert 'PRIVATE-PATCH-REVIEW/citizen_followup.php' in names
               assert 'public_html_baru/api/citizen-upload.php' in names
               assert 'public_html_baru/aktivitas-terpadu.php' in names
               assert 'public_html_baru/assets/admin-modern.js' in names
               assert 'MANIFEST-DEPLOY.json' in names
               assert 'BACA-SEBELUM-GANTI.txt' in names
+              assert 'PANDUAN-CIKOKO-SMART.txt' in names
               assert not any(x.startswith('public_html/') for x in names)
               assert {x for x in names if x.startswith('portal_private/')}=={
                   'portal_private/mobile_forms_api.php','portal_private/workflow_progress.php',
-                  'portal_private/workflow_feed.php'}
+                  'portal_private/workflow_feed.php','portal_private/cikoko_smart_catalog.php'}
               assert not any('/instal-' in x or '/perbaiki-' in x for x in names)
               assert len(names)>=65,len(names)
           print('ZIP stages new private helpers; existing citizen_followup.php is review-only and NEVER automatically overwritten')
