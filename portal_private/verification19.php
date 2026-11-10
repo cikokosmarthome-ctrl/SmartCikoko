@@ -53,6 +53,23 @@ function v19_actor_allowed(array $actor):bool{
     require_once __DIR__.'/account_control.php';
     return account_control_allowed($actor);
 }
+/** Confirm the previous forms include versioning and correction history. */
+function v19_dependencies():array{
+    $result=[];
+    foreach(v19_sources() as $key=>$spec){
+        try{
+            $db=db('smartapp');
+            $db->query('SELECT id,version,status,review_note FROM '.$spec['table'].' LIMIT 1')->fetch();
+            $db->query('SELECT '.$spec['history_fk'].',old_status,new_status,note,actor_source,actor_id FROM '.$spec['history'].' LIMIT 1')->fetch();
+            $result[$key]=true;
+        }catch(Throwable $e){
+            error_log('Stage19 required source unavailable: '.$key);
+            $result[$key]=false;
+        }
+    }
+    return $result;
+}
+
 function v19_ready():bool{
     try{
         foreach(['unified_verification19','unified_verification_history19'] as $t)
