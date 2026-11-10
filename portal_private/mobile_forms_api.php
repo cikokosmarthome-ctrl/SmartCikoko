@@ -201,8 +201,9 @@ function mobile_form_review(array $actor,string $group,int $id,string $status,st
     mobile_form_group($group);
     if(!mobile_forms_enabled($actor)||!function_exists('is_super_admin')||!is_super_admin($actor))
        throw new RuntimeException('Hanya Super Administrator berwenang memeriksa laporan.');
-    if(!mobile_form_detail($actor,$group,$id))
-       throw new RuntimeException('Laporan tidak ditemukan.');
+    $detail=mobile_form_detail($actor,$group,$id);
+    if(!$detail||!in_array((string)$detail['status'],['diajukan','ditinjau'],true))
+       throw new RuntimeException('Laporan tidak ditemukan atau belum siap ditinjau.');
     if($group==='pegawai')f16_review($actor,$id,$status,$note);
     elseif($group==='wilayah')w17_review($actor,$id,$status,$note);
     else lr_review($actor,$id,$status,$note);
