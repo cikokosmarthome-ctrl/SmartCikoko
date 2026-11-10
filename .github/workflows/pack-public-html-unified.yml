@@ -6,6 +6,10 @@ on:
       - 'scripts/build_clean_public_html.py'
       - 'tests/clean-webroot.py'
       - 'public_html/index.php'
+      - 'public_html/assets/portal-mockup.css'
+      - 'public_html/assets/cikoko-office-illustration.svg'
+      - 'portal_private/mobile_forms_api.php'
+      - 'public_html/api/mobile-forms.php'
       - 'public_html/assets/site-public-v3.css'
       - 'public_html/assets/ui-modern.css'
       - 'public_html/assets/ui-modern.js'
@@ -61,13 +65,13 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p paket
-          rm -f paket/SmartCikoko-PUBLIC-HTML-BARU-V2.zip
-          (cd _webroot_replacement && zip -q -X -r ../paket/SmartCikoko-PUBLIC-HTML-BARU-V2.zip public_html_baru BACA-SEBELUM-GANTI.txt MANIFEST-DEPLOY.json)
-          unzip -t paket/SmartCikoko-PUBLIC-HTML-BARU-V2.zip
+          rm -f paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip
+          (cd _webroot_replacement && zip -q -X -r ../paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip public_html_baru BACA-SEBELUM-GANTI.txt MANIFEST-DEPLOY.json)
+          unzip -t paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip
           python3 - <<'PY'
           from pathlib import Path
           import zipfile
-          archive=Path('paket/SmartCikoko-PUBLIC-HTML-BARU-V2.zip')
+          archive=Path('paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip')
           with zipfile.ZipFile(archive) as z:
               names={x for x in z.namelist() if not x.endswith('/')}
               assert 'public_html_baru/index.php' in names
@@ -75,7 +79,9 @@ jobs:
               assert 'public_html_baru/api/index.php' in names
               assert 'public_html_baru/super-admin-satu.php' in names
               assert 'public_html_baru/assets/ui-modern.css' in names
-              assert 'public_html_baru/assets/site-public-v3.css' in names
+              assert 'public_html_baru/assets/portal-mockup.css' in names
+              assert 'public_html_baru/assets/cikoko-office-illustration.svg' in names
+              assert 'public_html_baru/api/mobile-forms.php' in names
               assert 'public_html_baru/assets/admin-modern.js' in names
               assert 'MANIFEST-DEPLOY.json' in names
               assert 'BACA-SEBELUM-GANTI.txt' in names
@@ -85,7 +91,7 @@ jobs:
               assert len(names)>=65,len(names)
           print('ZIP deploys ONLY to public_html_baru, never overwrites current live webroot')
           PY
-          du -h paket/SmartCikoko-PUBLIC-HTML-BARU-V2.zip
+          du -h paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip
       - name: Build small two-file homepage repair for already deployed V1 sites
         shell: bash
         run: |
@@ -93,9 +99,10 @@ jobs:
           rm -rf _homepage_hotfix
           mkdir -p _homepage_hotfix/public_html/assets
           cp _webroot_replacement/public_html_baru/index.php _homepage_hotfix/public_html/index.php
-          cp _webroot_replacement/public_html_baru/assets/site-public-v3.css _homepage_hotfix/public_html/assets/site-public-v3.css
+          cp _webroot_replacement/public_html_baru/assets/portal-mockup.css _homepage_hotfix/public_html/assets/portal-mockup.css
+          cp _webroot_replacement/public_html_baru/assets/cikoko-office-illustration.svg _homepage_hotfix/public_html/assets/cikoko-office-illustration.svg
           cat > _homepage_hotfix/BACA-PERBAIKAN-BERANDA.txt <<'HELP'
-          SMARTCIKOKO — PERBAIKAN BERANDA V3
+          SMARTCIKOKO — BERANDA MOCKUP V4
           Masalah: header bertumpuk, tombol polos, kartu kanan kosong.
           Penyebab: beranda lama masih mengandalkan CSS lama yang dapat
           tidak terambil atau konflik dengan tema modern.
@@ -106,30 +113,31 @@ jobs:
           2. CPanel File Manager: Upload ZIP di /home/datd1747/.
           3. Extract di /home/datd1747/ dan izinkan overwrite HANYA
              public_html/index.php.
-             File public_html/assets/site-public-v3.css adalah file BARU.
-          4. Buka https://datawebs.my.id/?page=beranda&v=3
+             File portal-mockup.css dan cikoko-office-illustration.svg adalah aset BARU.
+          4. Buka https://datawebs.my.id/?page=beranda&v=4
           5. Periksa header, tombol, panel akses cepat, layanan, footer,
              ponsel dan desktop. Ctrl+F5 bila perlu.
           6. Jika ada masalah, restore index.php dari backup.
           JANGAN hapus portal_private, database, unggahan, atau MFA.
           Paket ini khusus Beranda/halaman yang ditangani index.php;
-          untuk seluruh rute gunakan PUBLIC-HTML-BARU-V2 setelah uji.
+          untuk seluruh rute gunakan WEBSITE-MOCKUP-V4 setelah uji.
           HELP
-          (cd _homepage_hotfix && zip -q -X -r ../paket/SmartCikoko-PERBAIKAN-BERANDA-V3.zip .)
-          unzip -t paket/SmartCikoko-PERBAIKAN-BERANDA-V3.zip
+          (cd _homepage_hotfix && zip -q -X -r ../paket/SmartCikoko-BERANDA-MOCKUP-V4.zip .)
+          unzip -t paket/SmartCikoko-BERANDA-MOCKUP-V4.zip
           python3 - <<'PY'
           import zipfile
-          with zipfile.ZipFile('paket/SmartCikoko-PERBAIKAN-BERANDA-V3.zip') as z:
+          with zipfile.ZipFile('paket/SmartCikoko-BERANDA-MOCKUP-V4.zip') as z:
               files={name for name in z.namelist() if not name.endswith('/')}
               assert files=={
                   'public_html/index.php',
-                  'public_html/assets/site-public-v3.css',
+                  'public_html/assets/portal-mockup.css',
+                  'public_html/assets/cikoko-office-illustration.svg',
                   'BACA-PERBAIKAN-BERANDA.txt'
               },files
               html=z.read('public_html/index.php')
-              assert b'/assets/site-public-v3.css?v=20261110v3' in html
-              assert b'class="hero-quick-grid"' in html
-          print('V3 fix modifies one existing PHP and adds one CSS file.')
+              assert b'/assets/portal-mockup.css?v=20261110a' in html
+              assert b'class="hero-art"' in html
+          print('V4 mockup replaces one existing PHP and adds CSS and illustration.')
           PY
       - name: Publish verified complete staging ZIP
         shell: bash
@@ -137,7 +145,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f paket/SmartCikoko-PUBLIC-HTML-BARU-V2.zip paket/SmartCikoko-PERBAIKAN-BERANDA-V3.zip
+          git add -f paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip paket/SmartCikoko-BERANDA-MOCKUP-V4.zip
           if ! git diff --cached --quiet; then
             git commit -m "Release full SmartCikoko unified clean public_html staging ZIP"
             git pull --rebase origin main
@@ -147,6 +155,6 @@ jobs:
         with:
           name: SmartCikoko-PUBLIC-HTML-BARU-V2
           path: |
-            paket/SmartCikoko-PUBLIC-HTML-BARU-V2.zip
-            paket/SmartCikoko-PERBAIKAN-BERANDA-V3.zip
+            paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip
+            paket/SmartCikoko-BERANDA-MOCKUP-V4.zip
           retention-days: 30
