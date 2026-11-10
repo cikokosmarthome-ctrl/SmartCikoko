@@ -94,6 +94,7 @@ class _ActivityPageState extends State<ActivityPage> {
             final data = Map<String, dynamic>.from(
                 snapshot.data!['data'] as Map? ?? {});
             final records = PortalApi.rows(data['items']);
+            final reviewQueue = PortalApi.rows(data['review_queue']);
             final notices = PortalApi.rows(data['notifications']);
             final summary = Map<String, dynamic>.from(
                 data['summary'] as Map? ?? {});
@@ -131,6 +132,25 @@ class _ActivityPageState extends State<ActivityPage> {
                       ),
                     ),
                   ),
+                  if (reviewQueue.isNotEmpty) ...[
+                    const SizedBox(height: 17),
+                    const Text('Antrean Pemeriksaan Berwenang',
+                        style: TextStyle(
+                            fontSize: 17, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 7),
+                    for (final item in reviewQueue)
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.fact_check_outlined,
+                              color: CivicColors.blue),
+                          title: Text((item['reference'] ?? '').toString()),
+                          subtitle: Text(
+                            '${item['status_label'] ?? ''} · ${item['progress_percent'] ?? 0}%',
+                          ),
+                          onTap: () => openRecord({'group': 'warga'}),
+                        ),
+                      ),
+                  ],
                   const SizedBox(height: 19),
                   const Text('Pengajuan & Laporan Saya',
                       style: TextStyle(
