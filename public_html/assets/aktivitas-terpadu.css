@@ -1,0 +1,42 @@
+/* SmartCikoko shared activity dashboard. The web and app read the same server status. */
+body.sc-page-aktivitas-terpadu{margin:0;background:#f4f8fc;color:#153b5b;font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+body.sc-page-aktivitas-terpadu *{box-sizing:border-box}
+body.sc-page-aktivitas-terpadu .activity-wrap{width:min(1170px,100%);margin:auto;padding:0 20px}
+body.sc-page-aktivitas-terpadu .activity-head{background:white;position:sticky;top:0;z-index:4;border-bottom:1px solid #dce8f2;box-shadow:0 4px 18px #153b5b13}
+body.sc-page-aktivitas-terpadu .activity-head .activity-wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:66px}
+body.sc-page-aktivitas-terpadu .activity-head a{color:#175b92;text-decoration:none;font-weight:750}
+body.sc-page-aktivitas-terpadu .activity-head nav{display:flex;gap:15px;flex-wrap:wrap}
+body.sc-page-aktivitas-terpadu .activity-head nav a{font-size:12px}
+body.sc-page-aktivitas-terpadu .activity-main{padding-top:30px;padding-bottom:45px}
+body.sc-page-aktivitas-terpadu .activity-kicker{font-size:11px;font-weight:900;letter-spacing:1.5px;color:#0a77bf}
+body.sc-page-aktivitas-terpadu .activity-intro h1{font-size:30px;margin:5px 0}
+body.sc-page-aktivitas-terpadu .activity-intro p{color:#647e94}
+body.sc-page-aktivitas-terpadu .activity-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin:25px 0}
+body.sc-page-aktivitas-terpadu .activity-metrics>div{background:white;border:1px solid #dce8f2;border-radius:13px;padding:17px;display:flex;flex-direction:column}
+body.sc-page-aktivitas-terpadu .activity-metrics strong{font-size:26px;color:#0d65a1}
+body.sc-page-aktivitas-terpadu .activity-metrics span{color:#58788d;font-size:12px}
+body.sc-page-aktivitas-terpadu .activity-cols{display:grid;grid-template-columns:1.25fr 1fr;align-items:start;gap:18px}
+body.sc-page-aktivitas-terpadu .activity-panel{background:white;border:1px solid #dce8f2;border-radius:15px;padding:19px;min-width:0}
+body.sc-page-aktivitas-terpadu .activity-heading{display:flex;justify-content:space-between;align-items:center;gap:10px}
+body.sc-page-aktivitas-terpadu h2{font-size:19px;margin:0 0 15px}
+body.sc-page-aktivitas-terpadu .activity-heading a,body.sc-page-aktivitas-terpadu .activity-case>a{color:#0665a6;font-weight:800;text-decoration:none;font-size:12px}
+body.sc-page-aktivitas-terpadu .activity-case{border:1px solid #dce8f2;border-radius:12px;padding:15px;margin:13px 0;background:#fcfeff}
+body.sc-page-aktivitas-terpadu .activity-case-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap}
+body.sc-page-aktivitas-terpadu .activity-case-top strong,body.sc-page-aktivitas-terpadu .activity-notice strong{display:block;font-size:13px}
+body.sc-page-aktivitas-terpadu .activity-case-top small{display:block;color:#6b899b}
+body.sc-page-aktivitas-terpadu .activity-case-top b{background:#e9f4fc;color:#0c669f;padding:4px 9px;border-radius:30px;font-size:11px}
+body.sc-page-aktivitas-terpadu .activity-percent{display:flex;justify-content:space-between;margin-top:17px;color:#57768b;font-size:11px}
+body.sc-page-aktivitas-terpadu .activity-percent strong{font-size:13px;color:#0c669f}
+body.sc-page-aktivitas-terpadu progress{width:100%;height:13px;accent-color:#147dc3}
+body.sc-page-aktivitas-terpadu .activity-case p{font-size:12px;color:#5b7b8b}
+body.sc-page-aktivitas-terpadu .activity-notice{border-bottom:1px solid #e6eef5;padding:13px 0}
+body.sc-page-aktivitas-terpadu .activity-notice p{font-size:12px;color:#54778b;margin:5px 0}
+body.sc-page-aktivitas-terpadu .activity-notice small,body.sc-page-aktivitas-terpadu .activity-muted,body.sc-page-aktivitas-terpadu .activity-footnote{font-size:11px;color:#648296}
+body.sc-page-aktivitas-terpadu .activity-warning{padding:14px;background:#fff5de;border:1px solid #eed59d;border-radius:10px}
+body.sc-page-aktivitas-terpadu .activity-footer{background:#0d2f4e;color:#c9dfe9;padding:20px 0}
+body.sc-page-aktivitas-terpadu :is(a,button):focus-visible{outline:3px solid #e6ab32;outline-offset:3px}
+@media(max-width:800px){body.sc-page-aktivitas-terpadu .activity-cols{grid-template-columns:1fr}
+body.sc-page-aktivitas-terpadu .activity-metrics{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:540px){body.sc-page-aktivitas-terpadu .activity-head .activity-wrap{flex-direction:column;align-items:flex-start;padding-block:12px}
+body.sc-page-aktivitas-terpadu .activity-intro h1{font-size:24px}
+body.sc-page-aktivitas-terpadu .activity-metrics{gap:8px}}
