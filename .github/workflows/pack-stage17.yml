@@ -1,0 +1,113 @@
+name: Paket Tahap 17 Laporan Kewilayahan
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_private/field_reports17.php'
+      - 'portal_private/wilayah17_admin_panel.php'
+      - 'portal_private/wilayah17_dashboard_patch.php'
+      - 'public_html/laporan-wilayah17.php'
+      - 'public_html/tinjau-wilayah17.php'
+      - 'public_html/instal-wilayah17.php'
+      - 'public_html/assets/laporan-wilayah17.css'
+      - 'public_html/assets/wilayah17-admin.css'
+      - 'tests/stage17-reports.php'
+      - '.github/workflows/pack-stage17.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-stage17-package
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring,pdo_mysql,fileinfo,openssl
+          tools: none
+      - name: Verify Stage 17 PHP syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portal_private/field_reports17.php portal_private/wilayah17_admin_panel.php portal_private/wilayah17_dashboard_patch.php public_html/laporan-wilayah17.php public_html/tinjau-wilayah17.php public_html/instal-wilayah17.php; do
+            php -l "$f"
+          done
+      - name: Test regional role isolation, counts, owner checks and protected patch
+        run: php tests/stage17-reports.php
+      - name: Lint exact integration into existing one-page dashboard and staff intake
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -r 'require "portal_private/wilayah17_dashboard_patch.php"; file_put_contents("/tmp/w17-admin-preview.php", w17_dashboard_patch(file_get_contents("public_html/super-admin-satu.php"))); file_put_contents("/tmp/w17-center-preview.php", w17_center_patch(file_get_contents("public_html/pusat-laporan.php")));'
+          php -l /tmp/w17-admin-preview.php
+          php -l /tmp/w17-center-preview.php
+      - name: CSS structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          for file in ['public_html/assets/laporan-wilayah17.css','public_html/assets/wilayah17-admin.css']:
+              css=Path(file).read_text()
+              assert css.count('{')==css.count('}'), file
+              assert '@media' in css, file
+          print('Stage17 responsive styles validated')
+          PY
+      - name: Build safe new-files-only cPanel ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf stage17_pkg
+          mkdir -p stage17_pkg/portal_private stage17_pkg/public_html/assets paket
+          cp portal_private/field_reports17.php portal_private/wilayah17_admin_panel.php portal_private/wilayah17_dashboard_patch.php stage17_pkg/portal_private/
+          cp public_html/laporan-wilayah17.php public_html/tinjau-wilayah17.php public_html/instal-wilayah17.php stage17_pkg/public_html/
+          cp public_html/assets/laporan-wilayah17.css public_html/assets/wilayah17-admin.css stage17_pkg/public_html/assets/
+          cat > stage17_pkg/BACA-TAHAP17.txt <<'HELP'
+          SMARTCIKOKO TAHAP 17 - LAPORAN KEWILAYAHAN DAN KESEHATAN
+          1. Backup website, 2 database, konfigurasi privat dan kunci MFA.
+          2. Upload ZIP di /home/datd1747/ dan Extract di direktori tersebut.
+          3. Paket ini hanya MENAMBAHKAN file baru.
+          4. Login Super Admin dengan Google Authenticator.
+          5. Buka https://datawebs.my.id/instal-wilayah17.php
+          6. Klik Pasang & Sambungkan ke Super Admin.
+          7. Installer menambah tabel laporan, lalu menyisipkan panel dan tautan
+             ke super-admin-satu.php dan pusat-laporan.php bila strukturnya cocok.
+             Kedua file dibackup dulu ke portal_private/wilayah17_backups/.
+          8. Panel: https://datawebs.my.id/super-admin-satu.php#laporan-wilayah
+          9. Form: https://datawebs.my.id/laporan-wilayah17.php
+          10. Uji dengan akun dummy, lalu hapus installer dan ZIP dari hosting.
+          JANGAN hapus tabel laporan maupun folder backup privat.
+          Tidak mengubah database Pegawai atau data laporan lama.
+          Foto, NIK, lokasi privat, dan surat resmi BELUM didukung.
+          HELP
+          rm -f paket/SmartCikoko-TAHAP17-LAPORAN-WILAYAH.zip
+          (cd stage17_pkg && zip -q -X -r ../paket/SmartCikoko-TAHAP17-LAPORAN-WILAYAH.zip .)
+          unzip -t paket/SmartCikoko-TAHAP17-LAPORAN-WILAYAH.zip
+          for f in portal_private/field_reports17.php portal_private/wilayah17_admin_panel.php portal_private/wilayah17_dashboard_patch.php public_html/laporan-wilayah17.php public_html/tinjau-wilayah17.php public_html/instal-wilayah17.php public_html/assets/laporan-wilayah17.css public_html/assets/wilayah17-admin.css; do
+            unzip -Z1 paket/SmartCikoko-TAHAP17-LAPORAN-WILAYAH.zip | grep -Fxq "$f"
+          done
+          if unzip -Z1 paket/SmartCikoko-TAHAP17-LAPORAN-WILAYAH.zip | grep -Eq '(^|/)(index|bootstrap|auth|config|super_admin|mfa|super-admin-satu|pusat-laporan)\.php$'; then
+            echo "ERROR: core site or existing dashboard should never be inside Stage-17 archive"
+            exit 1
+          fi
+      - name: Publish verified ZIP to GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-TAHAP17-LAPORAN-WILAYAH.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish SmartCikoko Stage 17 safe cPanel reporting ZIP"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-TAHAP17-LAPORAN-WILAYAH
+          path: paket/SmartCikoko-TAHAP17-LAPORAN-WILAYAH.zip
+          retention-days: 30
