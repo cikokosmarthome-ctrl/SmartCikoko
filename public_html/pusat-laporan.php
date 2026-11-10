@@ -32,6 +32,11 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='POST'){
         }elseif($action==='review' && $manager){
             lr_review($u,(int)($_POST['report_id']??0),(string)($_POST['status']??''),trim((string)($_POST['note']??'')));
             $_SESSION['lr_notice']='Tindak lanjut laporan tersimpan dalam audit.';
+        }elseif($action==='resubmit'){
+            lr_resubmit($u,(int)($_POST['report_id']??0),(int)($_POST['version']??0),
+                trim((string)($_POST['title']??'')),trim((string)($_POST['body']??'')),
+                trim((string)($_POST['location']??'')),(string)($_POST['activity_date']??''),(string)($_POST['end_date']??''));
+            $_SESSION['lr_notice']='Perbaikan laporan berhasil dikirim ulang untuk ditinjau.';
         }else throw new RuntimeException('Tindakan tidak diizinkan.');
         header('Location: /pusat-laporan.php?'.http_build_query(['kategori'=>(string)($_POST['category']??'')]),true,303);exit;
     }catch(Throwable $e){
@@ -113,6 +118,23 @@ function lr_url(string $cat='',int $page=1):string {
 <?php foreach($items['rows'] as $item):?>
 <details class="entry"><summary><span><b><?=h($item['title'])?></b><small><?=h($catalog[$item['category']]['label']??$item['category'])?> · <?=h($item['activity_date'])?></small></span><span class="status"><?=h(lr_stages()[$item['status']]??$item['status'])?></span></summary>
 <div class="entry-body"><p><?=nl2br(h($item['body']))?></p><p class="muted">Wilayah: <?=h($item['location']?:'—')?> · Tanggal selesai: <?=h($item['end_date']?:'—')?></p>
+<?php if(!empty($item['review_note'])):?><p class="review-note"><strong>Catatan Pemeriksaan:</strong> <?=h($item['review_note'])?></p><?php endif;?>
+<?php if(!$manager && $item['status']==='perbaikan'):?>
+<details class="correction"><summary>Perbaiki dan kirim ulang laporan</summary>
+<form class="intake" method="post" action="/pusat-laporan.php" autocomplete="off">
+<input type="hidden" name="csrf" value="<?=h(csrf())?>">
+<input type="hidden" name="action" value="resubmit">
+<input type="hidden" name="report_id" value="<?=(int)$item['id']?>">
+<input type="hidden" name="version" value="<?=(int)$item['version']?>">
+<input type="hidden" name="category" value="<?=h($item['category'])?>">
+<label>Judul<input name="title" value="<?=h($item['title'])?>" minlength="5" maxlength="150" required></label>
+<div class="two"><label>Tanggal kegiatan / mulai<input type="date" name="activity_date" value="<?=h($item['activity_date'])?>" required></label>
+<label>Tanggal selesai<input type="date" name="end_date" value="<?=h($item['end_date']??'')?>" <?=$item['category']==='cuti'?'required':''?>></label></div>
+<label>Wilayah / Lokasi<input name="location" value="<?=h($item['location'])?>" maxlength="180"></label>
+<label>Uraian / Alasan<textarea name="body" rows="4" minlength="15" maxlength="3000" required><?=h($item['body'])?></textarea></label>
+<button type="submit" class="btn primary">Kirim Perbaikan →</button></form>
+</details>
+<?php endif;?>
 <?php if($manager):?>
 <form class="review" method="post" action="/pusat-laporan.php?<?=h(http_build_query(['kategori'=>$category]))?>">
 <input type="hidden" name="csrf" value="<?=h(csrf())?>"><input type="hidden" name="action" value="review">
