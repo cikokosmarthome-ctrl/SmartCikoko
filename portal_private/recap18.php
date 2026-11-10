@@ -65,6 +65,9 @@ function e18_recent_reports(array $actor):array {
             $q=db('smartapp')->prepare('SELECT id,kind,status,created_at,actor_source,actor_id FROM '.$table.$where.' ORDER BY id DESC LIMIT 25');
             $q->execute($args);
             foreach($q->fetchAll(PDO::FETCH_ASSOC) as $row){
+                // Never show evidence links for leave applications or household health reports.
+                if($source==='pegawai16'&&!in_array((string)$row['kind'],['pppk','pjlp'],true))continue;
+                if($source==='wilayah17'&&(string)$row['kind']==='jumantik')continue;
                 if(!$admin){
                     $kind=(string)$row['kind'];
                     if($source==='pegawai16'){
