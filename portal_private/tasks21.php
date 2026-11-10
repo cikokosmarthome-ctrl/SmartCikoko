@@ -237,6 +237,45 @@ function t21_run(bool $manual=false,?array $admin=null):array{
         catch(Throwable $e){error_log('Stage21 scheduler lock release failed.');}
     }
 }
+/** Active assigned work, including reports not yet past the internal due threshold. */
+function t21_my_tasks(array $actor,int $limit=30):array{
+    require_once __DIR__.'/account_control.php';
+    if(!account_control_allowed($actor)||!t21_ready())return [];
+    $person=t21_identity((string)$actor['source'],(string)$actor['id']);
+    if(!$person)return [];
+    $q=db('smartapp')->prepare('SELECT * FROM unified_assignments21 WHERE reviewer_source=? AND reviewer_id=? AND enabled=1 AND effective_from<=CURRENT_DATE()');
+    $q->execute([$actor['source'],(string)$actor['id']]);
+    $result=[];$incomplete=false;$today=date('Y-m-d');
+    foreach($q->fetchAll(PDO::FETCH_ASSOC) as $rule){
+        if(!t21_qualified($person,(string)$rule['source_kind'],(string)$rule['category'],(string)$rule['step']))continue;
+        $s=(string)$rule['source_kind'];
+        $table=m20_sources()[$s]['table'];$cat=m20_sources()[$s]['cat'];
+        $sql='SELECT r.id,r.'.$cat.' AS category,r.status AS report_status,r.version,'
+            .'r.actor_source,r.actor_id,r.created_at,r.updated_at AS report_updated_at,'
+            .'v.state AS verify_state,v.report_version AS verify_version,v.updated_at AS verify_updated_at'
+            .' FROM '.$table.' r LEFT JOIN unified_verification19 v ON v.source_kind=? AND v.source_id=r.id'
+            ." WHERE r.".$cat."=? AND r.status IN ('diajukan','ditinjau') ORDER BY r.updated_at ASC LIMIT 101";
+        try{
+            $stmt=db('smartapp')->prepare($sql);
+            $stmt->execute([$s,$rule['category']]);$reports=$stmt->fetchAll(PDO::FETCH_ASSOC);
+            if(count($reports)>100){$incomplete=true;$reports=array_slice($reports,0,100);}
+            foreach($reports as $row){
+                if(m20_phase($row)!==t21_expected_phase((string)$rule['step']))continue;
+                if($row['actor_source']===$actor['source']
+                   &&hash_equals((string)$row['actor_id'],(string)$actor['id']))continue;
+                $age=m20_days_since(m20_reference_date($row),$today);
+                $result[]=['source'=>$s,'id'=>(int)$row['id'],'category'=>(string)$rule['category'],
+                    'step'=>$rule['step'],'age'=>$age,'due_days'=>(int)$rule['due_days'],
+                    'overdue'=>$age>=(int)$rule['due_days']];
+            }
+        }catch(Throwable $e){$incomplete=true;error_log('Stage21 assigned inbox queue unavailable.');}
+    }
+    usort($result,static fn($a,$b)=>($b['overdue']<=>$a['overdue'])?:($b['age']<=>$a['age']));
+    $limit=max(1,min(50,$limit));
+    if(count($result)>$limit)$incomplete=true;
+    return ['rows'=>array_slice($result,0,$limit),'incomplete'=>$incomplete];
+}
+
 function t21_alert_current(array $actor,array $a):bool{
     if(($actor['source']??'')!==($a['recipient_source']??'')
        ||!hash_equals((string)($actor['id']??''),(string)($a['recipient_id']??'')))return false;
