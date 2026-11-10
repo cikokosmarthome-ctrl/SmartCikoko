@@ -159,6 +159,53 @@ function r22_delegations():array{
     if(!r22_ready())return [];
     return db('smartapp')->query('SELECT source_kind,category,step,assigned_source,assigned_id,deputy_source,deputy_id,starts_on,ends_on,reason,revoked_at FROM unified_replacements22 ORDER BY source_kind,category,step')->fetchAll(PDO::FETCH_ASSOC);
 }
+/** Active deputy assignments, not just past-due alerts; all rows are permission checked. */
+function r22_deputy_tasks(array $actor,int $limit=30):array {
+    require_once __DIR__.'/account_control.php';
+    if(!account_control_allowed($actor)||!r22_ready())return ['rows'=>[],'incomplete'=>false];
+    $candidate=t21_identity((string)$actor['source'],(string)$actor['id']);
+    if(!$candidate)return ['rows'=>[],'incomplete'=>false];
+    $db=db('smartapp');$today=date('Y-m-d');$items=[];$incomplete=false;
+    $q=$db->prepare('SELECT * FROM unified_replacements22 WHERE deputy_source=? AND deputy_id=? AND revoked_at IS NULL AND starts_on<=CURRENT_DATE() AND ends_on>=CURRENT_DATE() ORDER BY source_kind,category,step LIMIT 50');
+    $q->execute([$actor['source'],(string)$actor['id']]);
+    foreach($q->fetchAll(PDO::FETCH_ASSOC) as $replacement){
+        $source=(string)$replacement['source_kind'];
+        $category=(string)$replacement['category'];$step=(string)$replacement['step'];
+        try{
+            if(!r22_gate($actor,$source,$category,$step))continue;
+            $policy=r22_policy($source,$category);
+            if(empty($policy['enforced']))continue; // no "assignment-only" claim before strict activation
+            $base=m20_sources()[$source]??null;
+            if(!$base)continue;
+            $sql='SELECT r.id,r.'.$base['cat'].' AS category,r.status,r.version,r.actor_source,r.actor_id,'
+                .'r.created_at,r.updated_at,'
+                .'v.state,v.report_version,v.reviewer_source,v.reviewer_id,v.updated_at AS verify_updated_at'
+                .' FROM '.$base['table'].' r LEFT JOIN unified_verification19 v ON v.source_kind=? AND v.source_id=r.id'
+                ." WHERE r.".$base['cat']."=? AND r.status IN ('diajukan','ditinjau') ORDER BY r.updated_at ASC LIMIT 101";
+            $query=$db->prepare($sql);$query->execute([$source,$category]);
+            $reports=$query->fetchAll(PDO::FETCH_ASSOC);
+            if(count($reports)>100){$incomplete=true;$reports=array_slice($reports,0,100);}
+            foreach($reports as $report){
+                if(($report['actor_source']??'')===$actor['source']
+                    &&hash_equals((string)$report['actor_id'],(string)$actor['id']))continue;
+                $expected=t21_expected_phase($step);
+                if(m20_phase($report)!==$expected)continue;
+                if($step==='lurah'&&$report['reviewer_source']===$actor['source']
+                   &&hash_equals((string)($report['reviewer_id']??''),(string)$actor['id']))continue;
+                $age=m20_days_since(m20_reference_date($report),$today);
+                $assignment=r22_assignment($source,$category,$step);
+                $items[]=['source'=>$source,'id'=>(int)$report['id'],'category'=>$category,
+                    'step'=>$step,'age'=>$age,'due_days'=>(int)($assignment['due_days']??0),
+                    'overdue'=>$age>=(int)($assignment['due_days']??60)];
+            }
+        }catch(Throwable $e){$incomplete=true;error_log('Stage22 deputy queue category unavailable.');}
+    }
+    usort($items,static fn($a,$b)=>($b['overdue']<=>$a['overdue'])?:($b['age']<=>$a['age']));
+    $limit=max(1,min(50,$limit));
+    if(count($items)>$limit)$incomplete=true;
+    return ['rows'=>array_slice($items,0,$limit),'incomplete'=>$incomplete];
+}
+
 function r22_monthly(array $admin,string $month):array{
     r22_super($admin);
     [$from,$to]=m20_month($month);
