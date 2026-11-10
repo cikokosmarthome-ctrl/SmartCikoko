@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartcikoko/src/api_client.dart';
+import 'package:smartcikoko/src/activity_page.dart';
 import 'package:smartcikoko/src/design.dart';
 import 'package:smartcikoko/src/login_page.dart';
 
@@ -38,6 +39,23 @@ void main() {
     expect(find.text('Username atau email'), findsOneWidget);
     expect(find.text('Kata sandi'), findsOneWidget);
     expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+  });
+
+  testWidgets('shared server percentage is shown without inventing completion',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(
+        body: ProgressMilestone(progress: {
+          'status_label': 'Disetujui secara administratif',
+          'progress_percent': 90,
+        }),
+      ),
+    ));
+    expect(find.text('90%'), findsOneWidget);
+    expect(find.text('Disetujui secara administratif'), findsOneWidget);
+    final indicator = tester.widget<LinearProgressIndicator>(
+        find.byType(LinearProgressIndicator));
+    expect(indicator.value, 0.9);
   });
 
   testWidgets('status label maps draft to readable Indonesian',
