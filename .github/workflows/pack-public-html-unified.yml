@@ -38,6 +38,9 @@ jobs:
           set -euo pipefail
           python3 scripts/build_clean_public_html.py --output _webroot_replacement
           cp docs/PUBLIC-HTML-BARU-UNIFIED.md _webroot_replacement/BACA-SEBELUM-GANTI.txt
+          mkdir -p _webroot_replacement/portal_private
+          cp portal_private/mobile_forms_api.php _webroot_replacement/portal_private/mobile_forms_api.php
+          php -l _webroot_replacement/portal_private/mobile_forms_api.php
       - name: Verify all active routes, one admin and sticky header/bottom footer
         run: python3 tests/clean-webroot.py _webroot_replacement
       - name: PHP lint for EVERY generated webroot PHP file
@@ -66,7 +69,7 @@ jobs:
           set -euo pipefail
           mkdir -p paket
           rm -f paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip
-          (cd _webroot_replacement && zip -q -X -r ../paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip public_html_baru BACA-SEBELUM-GANTI.txt MANIFEST-DEPLOY.json)
+          (cd _webroot_replacement && zip -q -X -r ../paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip public_html_baru portal_private BACA-SEBELUM-GANTI.txt MANIFEST-DEPLOY.json)
           unzip -t paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip
           python3 - <<'PY'
           from pathlib import Path
@@ -82,14 +85,15 @@ jobs:
               assert 'public_html_baru/assets/portal-mockup.css' in names
               assert 'public_html_baru/assets/cikoko-office-illustration.svg' in names
               assert 'public_html_baru/api/mobile-forms.php' in names
+              assert 'portal_private/mobile_forms_api.php' in names
               assert 'public_html_baru/assets/admin-modern.js' in names
               assert 'MANIFEST-DEPLOY.json' in names
               assert 'BACA-SEBELUM-GANTI.txt' in names
               assert not any(x.startswith('public_html/') for x in names)
-              assert not any(x.startswith('portal_private/') for x in names)
+              assert {x for x in names if x.startswith('portal_private/')}=={'portal_private/mobile_forms_api.php'}
               assert not any('/instal-' in x or '/perbaiki-' in x for x in names)
               assert len(names)>=65,len(names)
-          print('ZIP deploys ONLY to public_html_baru, never overwrites current live webroot')
+          print('ZIP deploys public_html_baru separately and ONE NEW private mobile API helper; no config secrets or live index overwrite')
           PY
           du -h paket/SmartCikoko-WEBSITE-MOCKUP-V4.zip
       - name: Build small two-file homepage repair for already deployed V1 sites
