@@ -24,6 +24,7 @@ EXCLUDED_CSS_EXACT = {
     "beranda-fix.css",
 }
 THEME = '<link rel="stylesheet" href="/assets/ui-modern.css?v=20261110">'
+PUBLIC_THEME = '<link rel="stylesheet" href="/assets/site-public-v3.css?v=20261110v3">'
 SHELL = '<script src="/assets/ui-modern.js?v=20261110" defer></script>'
 ADMIN_SCRIPT = '<script src="/assets/admin-modern.js?v=20261110" defer></script>'
 ADMIN_TABS = ("ringkasan", "laporan", "modul", "kemajuan", "pengaturan", "sc-admin-workspace")
@@ -223,7 +224,7 @@ def modernize_html(src: str, relative: Path) -> str:
     )
     if n != 1:
         raise ValueError(f"{relative}: expected exactly one body tag")
-    link = THEME + "\n" + SHELL
+    link = THEME + "\n" + (PUBLIC_THEME + "\n" if page == "index" else "") + SHELL
     if page == "super-admin-satu":
         link += "\n" + ADMIN_SCRIPT
     src, n = re.subn(r'(?i)</head\s*>', lambda m: link + "\n" + m.group(), src, count=1)
@@ -305,12 +306,13 @@ def generate(output: Path) -> dict:
     assert (target / "super-admin-satu.php").exists()
     assert (target / "assets/ui-modern.css").exists()
     assert (target / "assets/ui-modern.js").exists()
+    assert (target / "assets/site-public-v3.css").exists()
     assert (target / "assets/admin-modern.js").exists()
     assert not any(x.startswith("instal-") for x in included)
     assert not any(x.startswith("perbaiki-") for x in included)
     assert not any(x.endswith((".sql", ".zip", ".log", ".bak")) for x in included)
     manifest = {
-        "version": "2026-11-10-unified-1",
+        "version": "2026-11-10-unified-v3-home",
         "source": "GitHub SmartCikoko/main/public_html",
         "file_count": len(included),
         "unified_html_pages": len(transformed),
