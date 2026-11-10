@@ -1,0 +1,117 @@
+name: Flutter SmartCikoko Android iOS
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android_flutter/**'
+      - 'portal_private/mobile_forms_api.php'
+      - 'public_html/api/mobile-forms.php'
+      - 'tests/mobile-forms-api.php'
+      - '.github/workflows/pack-flutter-smartcikoko.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: smartcikoko-flutter-mobile
+  cancel-in-progress: false
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: PHP API lint and role safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -l portal_private/mobile_forms_api.php
+          php -l public_html/api/mobile-forms.php
+          php tests/mobile-forms-api.php
+      - name: Complete Android and iOS native Flutter scaffolds
+        working-directory: android_flutter
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter create --project-name smartcikoko --platforms android,ios .
+          flutter pub get
+          dart format lib test
+      - name: Analyze Flutter and run Widget/API tests
+        working-directory: android_flutter
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter analyze --no-fatal-infos
+          flutter test
+      - name: Build real Android debug APK for internal testing
+        working-directory: android_flutter
+        run: flutter build apk --debug
+      - name: Package full Flutter project with Android and iOS Xcode sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf _flutter_dist
+          mkdir -p _flutter_dist/SmartCikoko-Flutter
+          rsync -a android_flutter/ _flutter_dist/SmartCikoko-Flutter/ \
+            --exclude .dart_tool --exclude build --exclude .flutter-plugins \
+            --exclude .flutter-plugins-dependencies --exclude .metadata \
+            --exclude Pods --exclude .gradle
+          cp android_flutter/README.md _flutter_dist/BACA-FLUTTER.txt
+          mkdir -p paket
+          rm -f paket/SmartCikoko-FLUTTER-ANDROID-IOS.zip
+          (cd _flutter_dist && zip -X -qr ../paket/SmartCikoko-FLUTTER-ANDROID-IOS.zip .)
+          unzip -t paket/SmartCikoko-FLUTTER-ANDROID-IOS.zip
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('paket/SmartCikoko-FLUTTER-ANDROID-IOS.zip') as z:
+              names={x for x in z.namelist() if not x.endswith('/')}
+              mandatory=['SmartCikoko-Flutter/lib/main.dart',
+                'SmartCikoko-Flutter/lib/src/portal_app.dart',
+                'SmartCikoko-Flutter/lib/src/forms_page.dart',
+                'SmartCikoko-Flutter/lib/src/login_page.dart',
+                'SmartCikoko-Flutter/assets/cikoko-office-illustration.svg',
+                'SmartCikoko-Flutter/android/app/build.gradle.kts',
+                'SmartCikoko-Flutter/ios/Runner/Info.plist']
+              for name in mandatory:assert name in names,name
+              assert not any('/.dart_tool/' in x or '/build/' in x for x in names)
+          print('Both Android and iOS platform source trees bundled')
+          PY
+      - name: Publish source ZIP in SmartCikoko GitHub packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f paket/SmartCikoko-FLUTTER-ANDROID-IOS.zip
+          if ! git diff --cached --quiet; then
+            git commit -m "Release SmartCikoko Flutter Android and iOS project"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-Android-Debug-APK
+          path: android_flutter/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-Flutter-Android-iOS-Source
+          path: paket/SmartCikoko-FLUTTER-ANDROID-IOS.zip
+          retention-days: 30
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Generate project files and fetch dependencies
+        working-directory: android_flutter
+        run: |
+          flutter create --project-name smartcikoko --platforms ios .
+          flutter pub get
+      - name: Compile unsigned iOS application
+        working-directory: android_flutter
+        run: flutter build ios --no-codesign --debug
