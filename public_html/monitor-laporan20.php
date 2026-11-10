@@ -59,7 +59,7 @@ $sum=0;foreach($monthly['modules'] as $row)$sum+=(int)$row['submitted'];
 <section class="panel">
 <div class="panel-head"><div><h2>Aktivitas Laporan Bulanan</h2><p class="sub">Periode tanggal input awal. Tidak mencerminkan kewajiban yang belum dikirim atau hasil penilaian resmi.</p></div>
 <form method="get" action="/monitor-laporan20.php" class="month"><label for="bulan">Pilih bulan</label><input id="bulan" name="bulan" type="month" value="<?=h($month)?>" required><button class="btn" type="submit">Tampilkan</button></form></div>
-<div class="top-stats"><div><small>Total laporan diajukan pada bulan tersebut</small><strong><?=$sum?></strong></div>
+<div class="top-stats"><div><small>Laporan dibuat pada bulan tersebut dan kini sudah diajukan</small><strong><?=$sum?></strong></div>
 <div><small>Modul sumber siap dibaca</small><strong><?=count($sources)-count($monthly['incomplete'])?> / <?=count($sources)?></strong></div>
 <div><small>Aturan pengingat aktif</small><strong><?=(int)$queue['enabled_rules']?> / <?=count($sources)?></strong></div></div>
 <?php if($monthly['incomplete']):?><div class="flash warning">Rekap belum lengkap: <?=h(implode(', ',$monthly['incomplete']))?>. Periksa tabel modul sebelumnya.</div><?php endif;?>
@@ -76,7 +76,7 @@ $sum=0;foreach($monthly['modules'] as $row)$sum+=(int)$row['submitted'];
 </div>
 <?php endforeach;?>
 </div>
-<p class="smallnote">* Berdasarkan laporan yang pertama kali dibuat dalam bulan terpilih dan sudah dikirim. ** Status pada saat halaman dibuka; bukan jumlah tindakan sepanjang bulan dan bukan persetujuan resmi.</p>
+<p class="smallnote">* Berdasarkan laporan yang dibuat dalam bulan terpilih dan pada saat ini sudah pernah dikirim. ** Status pada saat halaman dibuka; bukan jumlah tindakan sepanjang bulan dan bukan persetujuan resmi.</p>
 </section>
 <section class="panel">
 <div class="panel-head"><div><h2>Aturan Pengingat Internal</h2><p class="sub">Tidak ada batas waktu yang diasumsikan sebagai kebijakan instansi. Super Admin menentukan ambang pemantauan (1–60 hari kalender).</p></div></div>
