@@ -17,6 +17,7 @@ on:
       - 'portal_private/workflow_feed.php'
       - 'portal_private/citizen_followup.php'
       - 'tests/workflow-progress.php'
+      - 'tests/stage10-unit.php'
       - 'public_html/assets/site-public-v3.css'
       - 'public_html/assets/ui-modern.css'
       - 'public_html/assets/ui-modern.js'
@@ -74,6 +75,7 @@ jobs:
         run: |
           set -euo pipefail
           php tests/workflow-progress.php
+          php tests/stage10-unit.php
           php tests/stage16-forms.php
           php tests/stage23-hub.php
           php tests/compact-ui.php
