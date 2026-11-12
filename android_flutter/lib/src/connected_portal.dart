@@ -6,13 +6,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'mobile_api.dart';
+import 'mobile_push.dart';
 
 /// Connected cPanel workspace for the live SmartCikoko Mobile API.
 ///
 /// Kept separate from the older portal login until legacy form endpoints have
 /// been migrated. Tokens for the two API backends must never be interchanged.
 class ConnectedCikokoPage extends StatefulWidget {
-  const ConnectedCikokoPage({super.key});
+  const ConnectedCikokoPage({
+    super.key,
+    this.startWithChat = false,
+    this.threadUserId,
+  });
+
+  final bool startWithChat;
+  final String? threadUserId;
 
   @override
   State<ConnectedCikokoPage> createState() => _ConnectedCikokoPageState();
@@ -42,6 +50,7 @@ class _ConnectedCikokoPageState extends State<ConnectedCikokoPage> {
   List<Map<String, dynamic>> _events = [];
   List<Map<String, dynamic>> _history = [];
   List<Map<String, dynamic>> _services = [];
+  final Map<int, Future<Uint8List>> _imageCache = {};
 
   @override
   void initState() {
@@ -95,8 +104,11 @@ class _ConnectedCikokoPageState extends State<ConnectedCikokoPage> {
       _staffChat = caps['chat:reply'] == true ||
           (caps['chat:reply'] is num && caps['chat:reply'] != 0);
       _error = null;
+      _tab = widget.startWithChat ? 1 : 0;
+      _threadId = _staffChat ? widget.threadUserId : null;
     });
     await _refresh(silent: true);
+    unawaited(MobilePush.registerForAccount(token));
   }
 
   Future<void> _login() async {
@@ -128,9 +140,11 @@ class _ConnectedCikokoPageState extends State<ConnectedCikokoPage> {
         await MobileApi.request('logout', token: token, method: 'POST');
       } catch (_) {}
     }
+    if (token != null) await MobilePush.releaseAccount(token);
     await _storage.delete(key: _tokenKey);
     if (!mounted) return;
     setState(() {
+      _imageCache.clear();
       _token = null;
       _user = {};
       _messages = [];
@@ -200,7 +214,7 @@ class _ConnectedCikokoPageState extends State<ConnectedCikokoPage> {
     setState(() {
       _tab = index;
       _error = null;
-      _loading = true;
+      _loading = false;
     });
     _refresh();
   }
@@ -350,7 +364,8 @@ class _ConnectedCikokoPageState extends State<ConnectedCikokoPage> {
     final id = (item['id'] as num?)?.toInt() ?? 0;
     if (id < 1 || _token == null) return const SizedBox.shrink();
     return FutureBuilder<Uint8List>(
-      future: MobileApi.chatPhoto(token: _token!, messageId: id),
+      future: _imageCache.putIfAbsent(id,
+          () => MobileApi.chatPhoto(token: _token!, messageId: id)),
       builder: (context, snap) {
         if (snap.hasData) {
           return ClipRRect(
