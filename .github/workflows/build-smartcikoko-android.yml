@@ -88,3 +88,51 @@ jobs:
           path: |
             android_flutter/build/app/outputs/flutter-apk/app-release.apk
             android_flutter/build/app/outputs/bundle/release/app-release.aab
+
+  publish-direct:
+    name: Publish direct APK and AAB download links (UAT prerelease)
+    needs: android
+    if: github.ref == 'refs/heads/feat/android-mobile-api-php84-20261112' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified Android artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: SmartCikoko-Android-APK-ARM64-AAB
+          path: dist/unpacked
+      - name: Prepare directly downloadable assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t APKS < <(find dist/unpacked -type f -name 'app-release.apk')
+          mapfile -t AABS < <(find dist/unpacked -type f -name 'app-release.aab')
+          if [ "${#APKS[@]}" -ne 1 ] || [ "${#AABS[@]}" -ne 1 ]; then
+            echo "Expected exactly one APK and one AAB from verified build"; exit 1
+          fi
+          cp "${APKS[0]}" dist/SmartCikoko-Android-ARM64-UAT.apk
+          cp "${AABS[0]}" dist/SmartCikoko-Android-Bundle-UAT.aab
+          sha256sum dist/SmartCikoko-Android-ARM64-UAT.apk dist/SmartCikoko-Android-Bundle-UAT.aab | tee dist/SHA256SUMS.txt
+      - name: Publish GitHub prerelease with APK and AAB as separate assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="smartcikoko-android-connected-beta"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" \
+              dist/SmartCikoko-Android-ARM64-UAT.apk \
+              dist/SmartCikoko-Android-Bundle-UAT.aab \
+              dist/SHA256SUMS.txt --clobber
+          else
+            gh release create "$TAG" \
+              dist/SmartCikoko-Android-ARM64-UAT.apk \
+              dist/SmartCikoko-Android-Bundle-UAT.aab \
+              dist/SHA256SUMS.txt \
+              --target "$GITHUB_SHA" \
+              --title "SmartCikoko Android Beta — APK dan AAB Langsung" \
+              --prerelease \
+              --notes "Rilis pengujian internal UAT dari branch integrasi. APK dan AAB dapat diunduh langsung tanpa ZIP. Lolos pipeline verifikasi struktur/tanda tangan dan pemindaian ClamAV; hasil tersebut bukan jaminan bebas malware. AAB ini BELUM menggunakan upload signing produksi Play Store, JANGAN diunggah ke Play Console. Jangan paksa unduh jika Chrome tetap memperingatkan file berbahaya."
+          fi
