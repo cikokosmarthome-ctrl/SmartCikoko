@@ -7,6 +7,7 @@ import '../citizen_requests.dart';
 import 'api_client.dart';
 import 'activity_page.dart';
 import 'connected_portal.dart';
+import 'mobile_push.dart';
 import 'design.dart';
 import 'forms_page.dart';
 import 'login_page.dart';
@@ -19,6 +20,7 @@ class SmartCikokoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
         title: 'SmartCikoko',
+        navigatorKey: MobilePush.navigatorKey,
         theme: smartTheme(),
         debugShowCheckedModeBanner: false,
         home: const PortalShell(),
@@ -42,6 +44,9 @@ class _PortalShellState extends State<PortalShell> {
   void initState() {
     super.initState();
     restore();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      MobilePush.openPending();
+    });
   }
 
   Future<void> restore() async {
