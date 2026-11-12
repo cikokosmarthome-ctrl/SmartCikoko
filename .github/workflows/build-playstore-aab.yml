@@ -34,11 +34,11 @@ jobs:
 
       - name: Configure Play signing Firebase and API 36
         env:
-          SC_PLAY_KEYSTORE_BASE64: %%SC_PLAY_KEYSTORE_BASE64%%
+          SC_PLAY_KEYSTORE_BASE64: ${{ secrets.SC_PLAY_KEYSTORE_BASE64 }}
           SC_PLAY_STORE_PASSWORD: ${{ secrets.SC_PLAY_STORE_PASSWORD }}
           SC_PLAY_KEY_ALIAS: ${{ secrets.SC_PLAY_KEY_ALIAS }}
           SC_PLAY_KEY_PASSWORD: ${{ secrets.SC_PLAY_KEY_PASSWORD }}
-          SC_FIREBASE_ANDROID_JSON_BASE64: %%SC_FIREBASE_ANDROID_JSON_BASE64%%
+          SC_FIREBASE_ANDROID_JSON_BASE64: ${{ secrets.SC_FIREBASE_ANDROID_JSON_BASE64 }}
         run: python3 scripts/prepare_flutter_play.py android_flutter
 
       - name: Validate Dart and widget tests
