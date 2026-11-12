@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../citizen_requests.dart';
 import 'api_client.dart';
 import 'activity_page.dart';
+import 'connected_portal.dart';
 import 'design.dart';
 import 'forms_page.dart';
 import 'login_page.dart';
@@ -431,6 +432,37 @@ class HomeTab extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Layanan Cikoko Terhubung (Beta)',
+                    style: TextStyle(fontWeight: FontWeight.w900)),
+                const SizedBox(height: 6),
+                const Text(
+                  'Hubungkan akun cPanel untuk chat, notifikasi, '
+                  'dan riwayat terbaru. Login portal lama tetap terpisah '
+                  'selama proses migrasi API.',
+                  style: TextStyle(fontSize: 12),
+                ),
+                const SizedBox(height: 10),
+                FilledButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ConnectedCikokoPage(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.sync_alt),
+                  label: const Text('Buka Layanan Terhubung'),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 23),
