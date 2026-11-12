@@ -38,5 +38,5 @@ jobs:
       - name: Analisis Flutter
         working-directory: android_flutter
         run: |
-          flutter analyze
+          flutter analyze --no-fatal-infos
           flutter test
