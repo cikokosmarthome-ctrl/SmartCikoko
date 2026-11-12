@@ -1,9 +1,9 @@
 name: smartcikoko
 description: Portal Digital Kelurahan Cikoko - Android and iOS
 publish_to: none
-version: 2.0.0+2
+version: 2.1.0+3
 environment:
-  sdk: '>=3.5.0 <4.0.0'
+  sdk: '>=3.6.0 <4.0.0'
 dependencies:
   flutter:
     sdk: flutter
@@ -11,6 +11,8 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   flutter_svg: ^2.2.1
   file_picker: ^10.3.10
+  firebase_core: ^5.1.0
+  firebase_messaging: ^17.0.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
