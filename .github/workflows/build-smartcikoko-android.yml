@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -31,6 +31,10 @@ jobs:
           fi
       - name: Install dependencies
         run: flutter pub get
+      - name: Validate Flutter code before Gradle release build
+        run: |
+          flutter analyze --no-fatal-infos
+          flutter test
       - name: Build APK ARM64
         run: flutter build apk --release --target-platform android-arm64
       - name: Build AAB
