@@ -56,7 +56,7 @@ Semua akses data dan keputusan otorisasi dilakukan **di server**. Pengujian jang
 ## Batasan
 
 - Foto gedung berupa **ilustrasi**, bukan klaim foto kantor sebenarnya. Logo KC adalah identitas sementara; ganti dengan lambang resmi berizin sebelum publikasi.
-- Tombol Google Sign-In, push notification, GPS, unggahan kamera, penyusunan surat resmi, dan persetujuan cuti **tidak diklaim aktif**; tidak ada tombol palsu untuk fitur tersebut.
+- Google Sign-In, GPS, pengambilan foto kamera langsung, penyusunan surat resmi, dan persetujuan cuti **tidak diklaim aktif**. FCM sudah ditambahkan sebagai integrasi bersyarat, tetapi pengiriman push ke HP belum aktif tanpa konfigurasi Firebase, Cron server, dan uji perangkat.
 - Source Android/iOS sama, namun kompatibilitas perangkat, hasil Apple build, keystore Android, store publishing, dan akurasi pixel-per-pixel belum terbukti 100% sebelum UAT.
 - Aplikasi Flutter tidak mengganti PHP/MySQL; tetap memakai backend SmartCikoko.
 
@@ -68,3 +68,13 @@ Semua akses data dan keputusan otorisasi dilakukan **di server**. Pengujian jang
 - **Pengujian aplikasi:** pada perangkat Android UAT, periksa login, pilihan akun ganda, MFA, berita, agenda, daftar formulir, simpan draf, pengiriman, riwayat, logout serta kondisi internet terputus. Jangan pakai data warga asli.
 - **Server:** sebelum uji formulir, deploy V4 beserta `portal_private/mobile_forms_api.php`; bila API tidak tersedia tombol *Coba lagi* akan memuat ulang data, bukan membuat data contoh.
 - APK ini **debug internal**, belum ditandatangani untuk produksi dan belum siap dipublikasikan ke Play Store/App Store. Rilis produksi memerlukan verifikasi instalasi perangkat, identitas aplikasi/logo resmi, kebijakan privasi, signing, dan pengujian backend produksi.
+
+
+## Integrasi cPanel terbaru (branch pengembangan, November 2026)
+
+- Tombol **Layanan Cikoko Terhubung (Beta)** di Beranda menggunakan `https://datawebs.my.id/mobile-api/index.php?action=...` dengan login dan token khusus API cPanel.
+- Chat warga/petugas, pengiriman foto galeri, receipt terkirim/diterima/terbaca, notifikasi personal, serta riwayat RT/RW memakai kontrak Mobile API PHP 8.4 yang digunakan pada hosting terbaru.
+- Untuk menjaga formulir portal lama, kedua sesi login belum digabung. Jangan klaim single sign-on sebelum migrasi seluruh modul selesai.
+- Firebase Messaging hanya dapat digunakan setelah konfigurasi Firebase Android, izin notifikasi, dan Cron FCM aktif di cPanel. Ketuk notifikasi chat akan membuka modul chat bila payload benar dan akun terotorisasi.
+- Pembuatan AAB Play Store membutuhkan lima GitHub Actions Secrets, upload signing key, target SDK 36, pengujian perangkat, dan persetujuan Play Console. **Build release UAT lama bukan paket siap unggah.**
+- Panduan lengkap: [`PLAYSTORE-INTEGRASI.md`](PLAYSTORE-INTEGRASI.md).

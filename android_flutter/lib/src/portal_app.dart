@@ -6,6 +6,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../citizen_requests.dart';
 import 'api_client.dart';
 import 'activity_page.dart';
+import 'connected_portal.dart';
+import 'mobile_push.dart';
 import 'design.dart';
 import 'forms_page.dart';
 import 'login_page.dart';
@@ -18,6 +20,7 @@ class SmartCikokoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
         title: 'SmartCikoko',
+        navigatorKey: MobilePush.navigatorKey,
         theme: smartTheme(),
         debugShowCheckedModeBanner: false,
         home: const PortalShell(),
@@ -41,6 +44,9 @@ class _PortalShellState extends State<PortalShell> {
   void initState() {
     super.initState();
     restore();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      MobilePush.openPending();
+    });
   }
 
   Future<void> restore() async {
@@ -431,6 +437,37 @@ class HomeTab extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Layanan Cikoko Terhubung (Beta)',
+                    style: TextStyle(fontWeight: FontWeight.w900)),
+                const SizedBox(height: 6),
+                const Text(
+                  'Hubungkan akun cPanel untuk chat, notifikasi, '
+                  'dan riwayat terbaru. Login portal lama tetap terpisah '
+                  'selama proses migrasi API.',
+                  style: TextStyle(fontSize: 12),
+                ),
+                const SizedBox(height: 10),
+                FilledButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ConnectedCikokoPage(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.sync_alt),
+                  label: const Text('Buka Layanan Terhubung'),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 23),
