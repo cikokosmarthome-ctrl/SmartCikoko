@@ -197,8 +197,30 @@ class _ConnectedCikokoPageState extends State<ConnectedCikokoPage> {
           break;
         case 3:
           final result = await MobileApi.request('history', token: token);
+          final rows = MobileApi.rows(result['items']);
+          // RT/RW is a separate cPanel module; it is not in 'history'.
+          // Other roles may not have access, so leave their history usable.
+          try {
+            final rtRw = await MobileApi.request('rt_rw_list', token: token);
+            for (final letter in MobileApi.rows(rtRw['items'])) {
+              final id = (letter['id'] ?? '').toString();
+              rows.add({
+                'id': letter['id'],
+                'kind': 'rt_rw',
+                'title': 'Pengantar RT/RW - ' +
+                    (letter['subject'] ?? 'Permohonan').toString(),
+                'reference': 'CK-RT-' + id.padLeft(6, '0'),
+                'status': letter['status'],
+                'created_at': letter['created_at'],
+              });
+            }
+          } on MobileApiException catch (e) {
+            if (e.statusCode != 403 && e.statusCode != 404) rethrow;
+          }
+          rows.sort((a, b) => (b['created_at'] ?? '').toString()
+              .compareTo((a['created_at'] ?? '').toString()));
           if (!mounted || token != _token) return;
-          setState(() => _history = MobileApi.rows(result['items']));
+          setState(() => _history = rows);
           break;
       }
       if (mounted) setState(() => _error = null);
@@ -495,6 +517,44 @@ class _ConnectedCikokoPageState extends State<ConnectedCikokoPage> {
         ]),
       );
 
+  Future<void> _openLetter(Map<String, dynamic> item) async {
+    if (item['kind'] != 'rt_rw' || _token == null) return;
+    try {
+      final detail = await MobileApi.request('rt_rw_detail',
+          token: _token!, query: {'id': (item['id'] ?? '').toString()});
+      if (!mounted) return;
+      final record = Map<String, dynamic>.from(detail['detail'] as Map? ?? {});
+      final timeline = MobileApi.rows(detail['timeline']);
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(18),
+            children: [
+              Text((record['reference_no'] ?? 'Surat RT/RW').toString(),
+                  style: const TextStyle(fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('Status: ' + (record['status'] ?? '-').toString()),
+              Text('Keperluan: ' + (record['subject'] ?? '-').toString()),
+              const Divider(),
+              const Text('Riwayat Progres'),
+              for (final event in timeline)
+                ListTile(
+                  title: Text((event['new_status'] ?? '').toString()),
+                  subtitle: Text((event['notes'] ?? '').toString()),
+                  trailing: Text((event['created_at'] ?? '').toString(),
+                      style: const TextStyle(fontSize: 10)),
+                ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) { _showError(e); }
+  }
+
   Widget _records() => RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(children: [
@@ -507,6 +567,8 @@ class _ConnectedCikokoPageState extends State<ConnectedCikokoPage> {
               title: Text((item['reference'] ?? item['title'] ??
                   'Pengajuan').toString()),
               subtitle: Text((item['status'] ?? '-').toString()),
+              onTap: item['kind'] == 'rt_rw'
+                  ? () => _openLetter(item) : null,
             ),
         ]),
       );
