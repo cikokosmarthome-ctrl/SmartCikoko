@@ -48,16 +48,10 @@ def run(project: Path) -> None:
     key_path.write_bytes(key_binary)
     key_path.chmod(0o600)
     # The keystore is local to the ephemeral GitHub runner, never committed.
-    properties = "\n".join([
-        "storeFile=upload-keystore.jks",
-        "storePassword=" + secret("SC_PLAY_STORE_PASSWORD"),
-        "keyAlias=" + secret("SC_PLAY_KEY_ALIAS"),
-        "keyPassword=" + secret("SC_PLAY_KEY_PASSWORD"),
-        "",
-    ])
-    key_properties = android / "key.properties"
-    key_properties.write_text(properties, encoding="utf-8")
-    key_properties.chmod(0o600)
+    # Passwords stay in runner environment; they are NOT written to key.properties.
+    secret("SC_PLAY_STORE_PASSWORD")
+    secret("SC_PLAY_KEY_ALIAS")
+    secret("SC_PLAY_KEY_PASSWORD")
 
     config_bytes = base64.b64decode(
         secret("SC_FIREBASE_ANDROID_JSON_BASE64"), validate=True)
@@ -107,22 +101,14 @@ def run(project: Path) -> None:
         gradle, 'signingConfig = signingConfigs.getByName("debug")',
         'signingConfig = signingConfigs.getByName("release")',
         "release signing")
-    gradle = (
-        "import java.util.Properties\n"
-        "import java.io.FileInputStream\n\n" + gradle
-    )
     properties_setup = """
-val playProperties = Properties()
-val playPropertiesFile = rootProject.file("key.properties")
-FileInputStream(playPropertiesFile).use { playProperties.load(it) }
-
 android {
     signingConfigs {
         create("release") {
-            storeFile = file(playProperties["storeFile"] as String)
-            storePassword = playProperties["storePassword"] as String
-            keyAlias = playProperties["keyAlias"] as String
-            keyPassword = playProperties["keyPassword"] as String
+            storeFile = file("upload-keystore.jks")
+            storePassword = System.getenv("SC_PLAY_STORE_PASSWORD")
+            keyAlias = System.getenv("SC_PLAY_KEY_ALIAS")
+            keyPassword = System.getenv("SC_PLAY_KEY_PASSWORD")
         }
     }
 """
