@@ -57,8 +57,48 @@ jobs:
         run: |
           set -euo pipefail
           flutter build appbundle --release
+          flutter build apk --release --target-platform android-arm64
           test -s build/app/outputs/bundle/release/app-release.aab
+          test -s build/app/outputs/flutter-apk/app-release.apk
 
+      - name: Verify signed Android archives and release identity
+        shell: bash
+        working-directory: android_flutter
+        run: |
+          set -euo pipefail
+          APKSIGNER="$(find "${ANDROID_HOME}/build-tools" -type f -name apksigner | sort -V | tail -1)"
+          AAPT="$(find "${ANDROID_HOME}/build-tools" -type f -name aapt | sort -V | tail -1)"
+          test -x "$APKSIGNER" && test -x "$AAPT"
+          python3 ../scripts/security_scan_android.py \
+            build/app/outputs/flutter-apk/app-release.apk \
+            build/app/outputs/bundle/release/app-release.aab \
+            "$APKSIGNER" "$AAPT"
+      - name: Install ClamAV and update detection signatures
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clamav clamav-freshclam
+          sudo systemctl stop clamav-freshclam || true
+          sudo freshclam --stdout
+      - name: Malware scan signed AAB and APK (fail closed)
+        working-directory: android_flutter
+        shell: bash
+        run: |
+          set -euo pipefail
+          clamscan --scan-archive=yes --infected --max-filesize=300M \
+            --max-scansize=2000M --max-recursion=40 \
+            build/app/outputs/flutter-apk/app-release.apk \
+            build/app/outputs/bundle/release/app-release.aab
+          echo 'ClamAV scan completed without detected signatures.' >> security-report.txt
+      - name: Upload security inspection report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartCikoko-Play-Security-Report
+          if-no-files-found: warn
+          retention-days: 14
+          path: android_flutter/security-report.txt
       - name: Upload AAB artifact for manual Play Console submission
         uses: actions/upload-artifact@v4
         with:
