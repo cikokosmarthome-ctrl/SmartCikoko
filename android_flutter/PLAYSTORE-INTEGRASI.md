@@ -84,3 +84,11 @@ PENTING: AAB yang berhasil dibuat tidak membuktikan login/chat/notifikasi berfun
 - Play Console approval, aspek hukum kebijakan privasi, aksesibilitas, pemeriksaan keamanan, dan release produksi.
 
 Sebelum merge ke main, jalankan `flutter pub get`, `flutter analyze`, `flutter test`, dan UAT sesuai daftar di atas.
+
+## Pemeriksaan keamanan APK/AAB (CI otomatis)
+
+- Workflow `.github/workflows/build-smartcikoko-android.yml` sekarang memeriksa struktur ZIP (CRC, nama file, ukuran, rasio kompresi), identitas Android `id.smartcikoko.smartcikoko`, tanda tangan APK/AAB, dan mencatat SHA-256.
+- Workflow kemudian menjalankan ClamAV dengan pembaruan basis tanda tangan. **Apabila pemindaian gagal, server antivirus tidak tersedia, ditemukan malware, atau pemeriksaan tanda tangan/arsip gagal, berkas APK/AAB tidak akan diunggah sebagai artifact rilis.**
+- Laporan dapat dilihat sebagai artifact `SmartCikoko-Android-Security-Report` pada GitHub Actions. Build Play Store manual memiliki pemeriksaan serupa dengan laporan `SmartCikoko-Play-Security-Report`.
+- **Hasil lolos ClamAV bukan jaminan bebas virus**, bukan audit keamanan aplikasi, dan tidak otomatis menghilangkan peringatan Chrome. Gunakan Google Play Internal Testing dengan kunci rilis yang terverifikasi untuk distribusi pengujian yang lebih aman.
+- Artifact yang dibuat oleh run lama **sebelum penambahan pemeriksaan** tidak mendapatkan sertifikasi keamanan secara retroaktif. Jangan memaksa Chrome menyimpan file yang diblokir.
